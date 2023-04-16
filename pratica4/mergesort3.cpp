@@ -43,17 +43,46 @@ void mergeSort(int *v, int p, int r, int *aux) {
 void noRecursiveMergeSort(int *v, int p, int r, int *aux) {
     int range = 2;
     int comeco = 0;
-    int fim = comeco + (range - 1);
-    int meio = range / 2;
-    while (range < r) {
+    int fim = comeco + (range);
+    int meio = (fim + comeco) / 2;
+    while (range / 2 < r) {
         while (comeco < r) {
-            merge(v, comeco, meio, fim, aux);
-            comeco = fim + 1;
+            int tam = fim - comeco;
+            // int *aux = new int[tam];
+            int i = comeco; // cursor 1
+            int j = meio; // cursor 2
+            int k = 0; // cursor para aux
+            while (i < meio && j < fim) {
+                if (v[i] <= v[j])
+                    aux[k++] = v[i++];
+                else
+                    aux[k++] = v[j++];
+            }
+            while (i < meio)
+                aux[k++] = v[i++];
+            while (j < fim)
+                aux[k++] = v[j++];
+            for (k = 0; k < tam; k++)
+                v[comeco + k] = aux[k];
+            delete[] aux;
+
+
+            comeco = fim;
             fim += range;
+            meio = (fim + comeco) / 2;
+            if (fim >= r) fim = r;
+            if (meio > fim) meio = fim;
         }
         range *= 2;
         comeco = 0;
-        fim = (range - 1);
+        fim = range;
+        if (fim >= r) fim = r;
+        meio = (fim + comeco) / 2;
+        if (meio > fim) meio = fim;
+        if (range >= r) {
+            merge(v, 0, range / 2, r, aux);
+            return;
+        }
     }
 
 }
@@ -83,8 +112,9 @@ int main(int argc, char **argv) {
     auto tempoSort = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - t0);
     cerr << "Tempo para ordenar (us): " << tempoSort.count() << "\n";
 
-    for (int i = 0; i < n - 1; i++)
+    for (int i = 0; i < n - 1; i++) {
         assert(v[i] <= v[i + 1]);
+    }
     cout << "ok\n";
 
     delete[] v;
