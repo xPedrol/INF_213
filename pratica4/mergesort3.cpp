@@ -26,18 +26,6 @@ void merge(int *v, int p, int q, int r, int *aux) {
         aux[k++] = v[j++];
     for (k = 0; k < tam; k++)
         v[p + k] = aux[k];
-    delete[] aux;
-}
-
-/* Ordena o vetor v entre as posicoes p e r-1 */
-void mergeSort(int *v, int p, int r, int *aux) {
-    // com um elemento, já está ordenado
-    if (p < r - 1) {
-        int meio = (p + r) / 2;
-        mergeSort(v, p, meio, aux);
-        mergeSort(v, meio, r, aux);
-        merge(v, p, meio, r, aux); // intercala
-    }
 }
 
 void noRecursiveMergeSort(int *v, int p, int r, int *aux) {
@@ -48,7 +36,6 @@ void noRecursiveMergeSort(int *v, int p, int r, int *aux) {
     while (range / 2 < r) {
         while (comeco < r) {
             int tam = fim - comeco;
-            // int *aux = new int[tam];
             int i = comeco; // cursor 1
             int j = meio; // cursor 2
             int k = 0; // cursor para aux
@@ -64,7 +51,6 @@ void noRecursiveMergeSort(int *v, int p, int r, int *aux) {
                 aux[k++] = v[j++];
             for (k = 0; k < tam; k++)
                 v[comeco + k] = aux[k];
-            delete[] aux;
 
 
             comeco = fim;
@@ -80,7 +66,23 @@ void noRecursiveMergeSort(int *v, int p, int r, int *aux) {
         meio = (fim + comeco) / 2;
         if (meio > fim) meio = fim;
         if (range >= r) {
-            merge(v, 0, range / 2, r, aux);
+            int q = range / 2;
+            int tam = r - 0;
+            int i = 0; // cursor 1
+            int j = q; // cursor 2
+            int k = 0; // cursor para aux
+            while (i < q && j < r) {
+                if (v[i] <= v[j])
+                    aux[k++] = v[i++];
+                else
+                    aux[k++] = v[j++];
+            }
+            while (i < q)
+                aux[k++] = v[i++];
+            while (j < r)
+                aux[k++] = v[j++];
+            for (k = 0; k < tam; k++)
+                v[k] = aux[k];
             return;
         }
     }
@@ -91,6 +93,7 @@ void mergeSort(int *v, int n) {
     int *aux = new int[n];
     // faca a alocacao aqui (apenas uma vez) e passe o array para que a versao recursiva do metodo possa utiliza-lo..
     noRecursiveMergeSort(v, 0, n, aux);
+    delete[] aux;
 }
 
 // nao modifique nada daqui para baixo...

@@ -27,7 +27,6 @@ void merge(int *v, int p, int q, int r, int *aux)
         aux[k++] = v[j++];
     for (k = 0; k < tam; k++)
         v[p + k] = aux[k];
-    delete[] aux;
 }
 
 /* Ordena o vetor v entre as posicoes p e r-1 */
@@ -48,6 +47,7 @@ void mergeSort(int *v, int n)
     int *aux = new int[n];
     // faca a alocacao aqui (apenas uma vez) e passe o array para que a versao recursiva do metodo possa utiliza-lo..
     mergeSort(v, 0, n, aux);
+    delete[] aux;
 }
 
 // nao modifique nada daqui para baixo...

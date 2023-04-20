@@ -52,8 +52,6 @@ void insertionSortPessoa(Pessoa *v, int n) {
 }
 
 
-
-
 /*
 Implementação genérica usando templates...
 */

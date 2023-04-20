@@ -28,9 +28,10 @@ Adapte-a para que seja genérica (com templates no tipo a ser ordenado)
 
 /* Supondo que v[p...q-1] e 
 v[q...r-1] estejam ordenados */
-void merge(int *v, int p, int q, int r) {
+template <class T>
+void merge(T *v, int p, int q, int r) {
     int tam = r-p;
-    int *aux = new int[tam];
+    T *aux = new T[tam];
     int i = p; //cursor 1
     int j = q; //cursor 2
     int k = 0; //cursor para aux
@@ -50,7 +51,8 @@ void merge(int *v, int p, int q, int r) {
 }
 
 /* Ordena o vetor v entre as posicoes p e r-1 */
-void mergeSort(int *v, int p, int r) {
+template <class T>
+void mergeSort(T *v, int p, int r) {
     // com um elemento, já está ordenado
     if (p < r-1) {
         int meio = (p+r) / 2;
@@ -60,8 +62,8 @@ void mergeSort(int *v, int p, int r) {
     }
 }
 
-
-void mergeSort(int *v, int n) {
+template <class T>
+void mergeSort(T *v, int n) {
     //faca a alocacao aqui (apenas uma vez) e passe o array para que a versao recursiva do metodo possa utiliza-lo..
     mergeSort(v, 0, n);
 }
