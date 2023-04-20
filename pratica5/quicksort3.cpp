@@ -7,6 +7,7 @@
 #include <ctime>
 
 using namespace std;
+const int usarInsertionSort = 90;
 
 void insertionSort(int *v, int n) {
     for (int i = 1; i < n; i++) {
@@ -44,7 +45,7 @@ int particiona(int *v, int beg, int end, int pivo) {
 void quickSort2(int *v, int beg, int end) {
     if (beg == end)
         return;
-    if (end - beg <= 90) {
+    if (end - beg <= usarInsertionSort) {
         insertionSort(v + beg, end - beg);
     } else {
         int pivoAleatorio = rand() % (end - beg) + beg; // escolhe um índice aleatório entre beg e end
