@@ -51,6 +51,31 @@ void readWalletData(Wallet *array, int total) {
 }
 
 
+int getgetStockDayPriceSequencial(HistoryPrice *prices, int totalPrices, string ticker, string date) {
+    for (int i = 0; i < totalPrices; ++i) {
+        if (prices[i].getTicker() == ticker && prices[i].getDate() == date) {
+            return prices[i].getPrice();
+        }
+    }
+    return -1;
+}
+
+int getStockDayPriceBinary(HistoryPrice *prices, int totalPrices, string ticker, string date) {
+    int left = 0;
+    int right = totalPrices - 1;
+    while (left <= right) {
+        int middle = (left + right) / 2;
+        if (prices[middle].getTicker() == ticker && prices[middle].getDate() == date) {
+            return prices[middle].getPrice();
+        } else if (prices[middle].getTicker() < ticker) {
+            left = middle + 1;
+        } else {
+            right = middle - 1;
+        }
+    }
+    return -1;
+}
+
 int main() {
     // Declaring variables
     int totalPrices;
@@ -87,6 +112,13 @@ int main() {
         cout <<"--------------------------------------------" << endl;
         cout << "Printing wallets: " << endl;
         printWalletData(wallets, totalStocks);
+
+        // Searching for a stock price
+        string header;
+        cout << "Header: " << endl;
+        cin >> header;
+        string operation;
+        string 
 
     }
     catch (exception &e) {
