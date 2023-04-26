@@ -32,3 +32,21 @@
 bbas3 100 3000.41 200.12
 cple11 200 1200.57 150.15
 bbse3 100 1950.31 300.75
+
+mostrarCabecalhos
+valor 12/01/2023
+valorFast 12/01/2023
+valor 13/01/2023
+valor 14/01/2023
+valor 17/01/2023
+mimax 12/01/2023 17/01/2023
+mimax 01/01/2023 31/12/2023
+dividendo 14/01/2023 14/01/2023
+dividendo 12/01/2023 12/01/2023
+ordenar ticker
+valor 12/01/2023
+ordenar dividendoticker
+valor 12/01/2023
+aporte 12/01/2023 1000.00
+valor 12/01/2023
+valor 13/01/2023
