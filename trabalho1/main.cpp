@@ -167,7 +167,6 @@ int getDividendByTickerAndRangeDate(HistoryEarning *dividends, int totalDividend
     int lastDateInRange = buscaBin(dividends, left, right, endDate, -1, true);
     int totalDividendsInRange = 0;
     for (int i = fisrtDateInRange; i <= lastDateInRange; i++) {
-        cout << "datesInRange[" << i << "] = " << dividends[i].getDate() << endl;
         if (dividends[i].getTicker() == ticker) {
             totalDividendsInRange += dividends[i].getPrice();
         }
@@ -186,7 +185,6 @@ MinMax getMaxMinDayPrice(HistoryPrice *prices, int totalPrices, Wallet *stocks, 
     int lastDateInRange = buscaBin(prices, left, right, endDate, -1, true);
     for (int i = fisrtDateInRange; i <= lastDateInRange; i++) {
         datesInRange[totalDatesInRange] = prices[i].getDate();
-        cout << "datesInRange[" << i << "] = " << datesInRange[totalDatesInRange] << endl;
         totalDatesInRange++;
     }
     totalDatesInRange = unique(datesInRange, datesInRange + totalDatesInRange) - datesInRange;
