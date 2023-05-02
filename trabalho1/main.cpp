@@ -74,6 +74,62 @@ int quickSort(T *v, int n, FuncType func)
     return 0;
 }
 
+class DividendCompare
+{
+public:
+    bool operator()(Wallet &a,
+                    Wallet &b) const
+    { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
+        return a.getTotalDividends() < b.getTotalDividends();
+    }
+};
+
+class WalletTickerCompare
+{
+public:
+    bool operator()(Wallet &a,
+                    Wallet &b) const
+    { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
+
+        return a.getTicker() < b.getTicker();
+    }
+};
+
+class DividendTickerCompare
+{
+public:
+    bool operator()(Wallet &a,
+                    Wallet &b) const
+    { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
+        if (a.getTotalDividends() == b.getTotalDividends())
+        {
+            WalletTickerCompare tickerCompare;
+            return tickerCompare(a, b);
+        }
+        return a.getTotalDividends() > b.getTotalDividends();
+    }
+};
+
+class QuantityCompare
+{
+public:
+    bool operator()(Wallet &a,
+                    Wallet &b) const
+    { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
+        return a.getQuantity() > b.getQuantity();
+    }
+};
+
+class PriceCompare
+{
+public:
+    bool operator()(Wallet &a,
+                    Wallet &b) const
+    { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
+        return a.getPurchasePrice() > b.getPurchasePrice();
+    }
+};
+
 template <class T>
 class TickerCompare
 {
@@ -454,6 +510,34 @@ void handleActions(string action, string params, string header, HistoryPrice *pr
         cout << setw(15) << "" << setw(15) << formatFloat(minMax.getMinPrice()) << endl;
         cout << setw(15) << "Valor maximo no dia " << minMax.getMaxDate() << ": ";
         cout << setw(15) << "" << setw(15) << formatFloat(minMax.getMaxPrice()) << endl;
+    }
+    if (action == "ordenar")
+    {
+        if (paramsArray[0] == "ticker")
+        {
+            WalletTickerCompare tickerCompare;
+            quickSort(wallets, totalWallets, tickerCompare);
+        }
+        if (paramsArray[0] == "quantidade")
+        {
+            QuantityCompare quantityCompare;
+            quickSort(wallets, totalWallets, quantityCompare);
+        }
+        if (paramsArray[0] == "preco")
+        {
+            PriceCompare priceCompare;
+            quickSort(wallets, totalWallets, priceCompare);
+        }
+        if (paramsArray[0] == "dividendo")
+        {
+            DividendCompare dividendCompare;
+            quickSort(wallets, totalWallets, dividendCompare);
+        }
+        if (paramsArray[0] == "dividendoticker")
+        {
+            DividendTickerCompare dividendTickerCompare;
+            quickSort(wallets, totalWallets, dividendTickerCompare);
+        }
     }
     if (header == "mostrarCabecalhos")
         cout << endl;

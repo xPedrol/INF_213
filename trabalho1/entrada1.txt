@@ -40,3 +40,7 @@ valor 14/01/2023
 valor 17/01/2023
 mimax 12/01/2023 17/01/2023
 dividendo 14/01/2023 14/01/2023
+ordenar ticker
+valor 12/01/2023
+ordenar dividendoticker
+valor 12/01/2023
