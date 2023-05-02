@@ -220,35 +220,35 @@ void readWalletData(Wallet *array, int total)
 }
 
 template <class T>
-int buscaBin(T *array, int begin, int end, string chave, int maior, bool getBiggestIndex)
+int buscaBin(T *array, int begin, int end, string date, int maior, bool getBiggestIndex)
 {
     if (begin > end)
         return maior;
     int meio = (end - begin) / 2 + begin;
-    if (array[meio].getDate() == chave)
+    if (array[meio].getDate() == date)
     {
         if (getBiggestIndex)
         {
-            if (meio < end && array[meio + 1].getDate() == chave)
+            if (meio < end && array[meio + 1].getDate() == date)
             {
-                return buscaBin(array, meio + 1, end, chave, maior, getBiggestIndex);
+                return buscaBin(array, meio + 1, end, date, maior, getBiggestIndex);
             }
         }
         else
         {
-            if (meio > 0 && array[meio - 1].getDate() == chave)
+            if (meio > 0 && array[meio - 1].getDate() == date)
             {
-                return buscaBin(array, begin, meio - 1, chave, maior, getBiggestIndex);
+                return buscaBin(array, begin, meio - 1, date, maior, getBiggestIndex);
             }
         }
         return meio;
     }
-    if (array[meio].getDate() > chave)
+    if (array[meio].getDate() > date)
     {
         maior = meio;
-        return buscaBin(array, begin, meio - 1, chave, maior, getBiggestIndex);
+        return buscaBin(array, begin, meio - 1, date, maior, getBiggestIndex);
     }
-    return buscaBin(array, meio + 1, end, chave, maior, getBiggestIndex);
+    return buscaBin(array, meio + 1, end, date, maior, getBiggestIndex);
 }
 
 int getStockByTickerBinary(HistoryPrice *prices, int totalPrices, string ticker)
@@ -285,7 +285,6 @@ int getStockDayPriceSequencial(HistoryPrice *prices, int totalPrices, string tic
     }
     return -1;
 }
-
 template <class T>
 int getArrayPriceByTicker(T *prices, int totalPrices, string ticker, string date)
 {
@@ -319,6 +318,55 @@ int getArrayPriceByTicker(T *prices, int totalPrices, string ticker, string date
         }
     }
     return -1;
+}
+
+void printBuyStock(string ticker, int quantity, int price)
+{
+    cout << left << setw(15) << ticker
+         << left << setw(20) << quantity
+         << left << setw(15) << formatFloat(price) << endl;
+}
+
+void buyStocks(Wallet *wallet, int totalWallet, HistoryPrice *prices, int totalPrices, string date, int newValue, int &totalnewPurchase)
+{
+    Wallet *lowerStock = &wallet[0];
+    int priceMinValorStockInDate = getArrayPriceByTicker(prices, totalPrices, lowerStock->getTicker(), date);
+    for (int i = 1; i < totalWallet; ++i)
+    {
+        int stockUnitPriceInDate = getArrayPriceByTicker(prices, totalPrices, wallet[i].getTicker(), date);
+        if (stockUnitPriceInDate)
+        {
+            if (stockUnitPriceInDate * wallet[i].getQuantity() < priceMinValorStockInDate * lowerStock->getQuantity())
+            {
+                lowerStock = &wallet[i];
+                priceMinValorStockInDate = stockUnitPriceInDate;
+            }
+            else if (stockUnitPriceInDate == lowerStock->getPurchasePrice())
+            {
+                if (wallet[i].getTicker() < lowerStock->getTicker())
+                {
+                    lowerStock = &wallet[i];
+                    priceMinValorStockInDate = stockUnitPriceInDate;
+                }
+            }
+        }
+    }
+
+    int newQuantity = newValue / priceMinValorStockInDate;
+    int newPurchasePrice = priceMinValorStockInDate * newQuantity;
+    if (newQuantity == 0 || newValue < newPurchasePrice)
+    {
+        return;
+    }
+    lowerStock->setQuantity(lowerStock->getQuantity() + newQuantity);
+    lowerStock->setPurchasePrice(lowerStock->getPurchasePrice() + newPurchasePrice);
+    newValue -= newPurchasePrice;
+    totalnewPurchase += newPurchasePrice;
+    printBuyStock(lowerStock->getTicker(), newQuantity, newPurchasePrice);
+    if (newValue > 0)
+    {
+        buyStocks(wallet, totalWallet, prices, totalPrices, date, newValue, totalnewPurchase);
+    }
 }
 
 int getDividendByTickerAndRangeDate(HistoryEarning *dividends, int totalDividends, string ticker, string startDate,
@@ -437,6 +485,17 @@ void printValorOperator(string ticker, int quantity, int buyPrice, int dividend,
          << left << setw(15) << formatFloat(value) << endl;
 }
 
+void printBuyStockHeader(string header)
+{
+    if (header == "mostrarCabecalhos")
+    {
+        cout << "Dados do aporte:" << endl;
+        cout << left << setw(15) << "Ticker"
+             << left << setw(20) << "Quantidade"
+             << left << setw(15) << "Valor" << endl;
+    }
+}
+
 void handleActions(string action, string params, string header, HistoryPrice *prices, int totalPrices,
                    HistoryEarning *earnings, int totalEarnings, Wallet *wallets, int totalWallets)
 {
@@ -538,6 +597,15 @@ void handleActions(string action, string params, string header, HistoryPrice *pr
             DividendTickerCompare dividendTickerCompare;
             quickSort(wallets, totalWallets, dividendTickerCompare);
         }
+    }
+    if (action == "aporte")
+    {
+        printBuyStockHeader(header);
+        int convertedPrice = convertStringToInt(paramsArray[1]);
+        int totalNewPurchase = 0;
+        buyStocks(wallets, totalWallets, prices, totalPrices, paramsArray[0], convertedPrice, totalNewPurchase);
+        cout << setw(15) << "Total do aporte: ";
+        cout << setw(18) << "" << formatFloat(totalNewPurchase) << endl;
     }
     if (header == "mostrarCabecalhos")
         cout << endl;
