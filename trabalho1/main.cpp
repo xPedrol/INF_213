@@ -4,13 +4,75 @@
 #include <algorithm> // std::sort
 #include <sstream>
 #include <string>
-#include "SortMethods.h"
 #include "HistoryPrice.h"
 #include "HistoryEarning.h"
 #include "Wallet.h"
 #include "MinMax.h"
 
 using namespace std;
+template <class FuncType, class T>
+void insertionSort(T *v, int n, FuncType func)
+{
+    for (int i = 1; i < n; i++)
+    {
+        // o arranjo entre as posicoes [0,i) já está ordenado
+        T elemInserir = v[i];
+        int j = i - 1;
+        while (j >= 0 && func(elemInserir, v[j]))
+        {
+            v[j + 1] = v[j];
+            j--;
+        }
+        v[j + 1] = elemInserir;
+    }
+}
+
+// particiona o subvetor v[beg, ..., end - 1]
+// retorna a posição onde o pivo foi armazenado
+template <class FuncType, class T>
+int particiona(T *v, int beg, int end, int pivo, FuncType func)
+{
+    T valorPivo = v[pivo];
+    // colocamos o pivo temporariamente na ultima posição
+    swap(v[pivo], v[end - 1]);
+    // ao acharmos um elemento menor do que o pivo, vamos coloca-lo
+    // na posicao "pos"
+    int pos = beg;
+    for (int i = beg; i < end - 1; i++)
+    {
+        if (func(v[i], valorPivo))
+        {
+            swap(v[pos], v[i]);
+            pos++;
+        }
+    }
+    // coloque o pivo depois do ultimo elemento menor que ele
+    swap(v[pos], v[end - 1]);
+    return pos;
+}
+template <class FuncType, class T>
+void quickSort2(T *v, int beg, int end, FuncType func)
+{
+    if (beg == end)
+        return;
+    if (end - beg <= 90)
+    {
+        insertionSort(v + beg, end - beg, func);
+    }
+    else
+    {
+        int pivoAleatorio = rand() % (end - beg) + beg; // escolhe um índice aleatório entre beg e end
+        int pos = particiona(v, beg, end, pivoAleatorio, func);
+        quickSort2(v, beg, pos, func);
+        quickSort2(v, pos + 1, end, func);
+    }
+}
+template <class FuncType, class T>
+int quickSort(T *v, int n, FuncType func)
+{
+    quickSort2(v, 0, n, func);
+    return 0;
+}
 
 template <class T>
 class TickerCompare
@@ -37,7 +99,6 @@ public:
         return a.getDate() < b.getDate();
     }
 };
-
 string formatFloat(int n)
 {
     ostringstream stream;
@@ -242,9 +303,9 @@ MinMax getMaxMinDayPrice(HistoryPrice *prices, int totalPrices, Wallet *stocks, 
     string maxDate = "";
     int maxPrice = 0;
     int minPrice = 0;
-    SortMethods sortM;
+    TickerCompare<HistoryPrice> tickerCompare;
+    quickSort(prices, totalPrices, tickerCompare);
     // sort(prices, prices + totalPrices, TickerCompare<HistoryPrice>());
-    sortM.quickSort(prices, totalPrices, TickerCompare<HistoryPrice>());
     for (int i = 0; i < totalDatesInRange; i++)
     {
         int dateTotalprice = 0;
@@ -350,7 +411,8 @@ void handleActions(string action, string params, string header, HistoryPrice *pr
     if (action == "valorFast")
     {
         printValorOperatorHeader(header, paramsArray[0]);
-        sort(prices, prices + totalPrices, TickerCompare<HistoryPrice>());
+        TickerCompare<HistoryPrice> tickerCompare;
+        quickSort(prices, totalPrices, tickerCompare);
         int totalValue = 0;
         for (int j = 0; j < totalWallets; ++j)
         {
@@ -366,7 +428,8 @@ void handleActions(string action, string params, string header, HistoryPrice *pr
     if (action == "dividendo")
     {
         printDividendOperatorHeader(header, paramsArray[0], paramsArray[1]);
-        sort(earnings, earnings + totalEarnings, TickerCompare<HistoryEarning>());
+        TickerCompare<HistoryEarning> tickerCompare;
+        quickSort(earnings, totalEarnings, tickerCompare);
         int totalDividend = 0;
         for (int j = 0; j < totalWallets; ++j)
         {
@@ -384,7 +447,8 @@ void handleActions(string action, string params, string header, HistoryPrice *pr
     if (action == "mimax")
     {
         prindMinMaxOperatorHeader(header, paramsArray[0], paramsArray[1]);
-        sort(prices, prices + totalPrices, DateCompare<HistoryPrice>());
+        DateCompare<HistoryPrice> dateCompare;
+        quickSort(prices, totalPrices, dateCompare);
         MinMax minMax = getMaxMinDayPrice(prices, totalPrices, wallets, totalWallets, paramsArray[0], paramsArray[1]);
         cout << setw(15) << "Valor minimo no dia " << minMax.getMinDate() << ": ";
         cout << setw(15) << "" << setw(15) << formatFloat(minMax.getMinPrice()) << endl;
@@ -398,7 +462,6 @@ void handleActions(string action, string params, string header, HistoryPrice *pr
 int main()
 {
     // Declaring variables
-    SortMethods sortMethods;
     int totalPrices;
     int totalEarnings;
     int totalStocks;
