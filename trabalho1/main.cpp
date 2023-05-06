@@ -298,16 +298,14 @@ void buyStocks(Wallet *wallet, int totalWallet, HistoryPrice *prices, int totalP
         }
     }
 
-    int newQuantity = newValue / priceMinValorStockInDate;
-    int newPurchasePrice = priceMinValorStockInDate * newQuantity;
-    if (newQuantity == 0 || newValue < newPurchasePrice) {
+    if (newValue < priceMinValorStockInDate) {
         return;
     }
-    lowerStock->setQuantity(lowerStock->getQuantity() + newQuantity);
-    lowerStock->setPurchasePrice(lowerStock->getPurchasePrice() + newPurchasePrice);
-    newValue -= newPurchasePrice;
-    totalnewPurchase += newPurchasePrice;
-    printBuyStock(lowerStock->getTicker(), newQuantity, newPurchasePrice);
+    lowerStock->setQuantity(lowerStock->getQuantity() + 1);
+    lowerStock->setPurchasePrice(lowerStock->getPurchasePrice() + priceMinValorStockInDate);
+    newValue -= priceMinValorStockInDate;
+    totalnewPurchase += priceMinValorStockInDate;
+    printBuyStock(lowerStock->getTicker(), 1, priceMinValorStockInDate);
     if (newValue > 0) {
         buyStocks(wallet, totalWallet, prices, totalPrices, date, newValue, totalnewPurchase);
     }
