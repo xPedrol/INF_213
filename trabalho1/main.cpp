@@ -10,16 +10,28 @@
 #include "MinMax.h"
 
 using namespace std;
-template <class FuncType, class T>
-void insertionSort(T *v, int n, FuncType func)
-{
-    for (int i = 1; i < n; i++)
-    {
+
+bool compareDates(string date1, string date2) {
+    int year1 = stoi(date1.substr(6));
+    int year2 = stoi(date2.substr(6));
+    if (year1 != year2)
+        return year1 < year2;
+    int month1 = stoi(date1.substr(3, 2));
+    int month2 = stoi(date2.substr(3, 2));
+    if (month1 != month2)
+        return month1 < month2;
+    int day1 = stoi(date1.substr(0, 2));
+    int day2 = stoi(date2.substr(0, 2));
+    return day1 < day2;
+}
+
+template<class FuncType, class T>
+void insertionSort(T *v, int n, FuncType func) {
+    for (int i = 1; i < n; i++) {
         // o arranjo entre as posicoes [0,i) já está ordenado
         T elemInserir = v[i];
         int j = i - 1;
-        while (j >= 0 && func(elemInserir, v[j]))
-        {
+        while (j >= 0 && func(elemInserir, v[j])) {
             v[j + 1] = v[j];
             j--;
         }
@@ -29,19 +41,16 @@ void insertionSort(T *v, int n, FuncType func)
 
 // particiona o subvetor v[beg, ..., end - 1]
 // retorna a posição onde o pivo foi armazenado
-template <class FuncType, class T>
-int particiona(T *v, int beg, int end, int pivo, FuncType func)
-{
+template<class FuncType, class T>
+int particiona(T *v, int beg, int end, int pivo, FuncType func) {
     T valorPivo = v[pivo];
     // colocamos o pivo temporariamente na ultima posição
     swap(v[pivo], v[end - 1]);
     // ao acharmos um elemento menor do que o pivo, vamos coloca-lo
     // na posicao "pos"
     int pos = beg;
-    for (int i = beg; i < end - 1; i++)
-    {
-        if (func(v[i], valorPivo))
-        {
+    for (int i = beg; i < end - 1; i++) {
+        if (func(v[i], valorPivo)) {
             swap(v[pos], v[i]);
             pos++;
         }
@@ -50,59 +59,49 @@ int particiona(T *v, int beg, int end, int pivo, FuncType func)
     swap(v[pos], v[end - 1]);
     return pos;
 }
-template <class FuncType, class T>
-void quickSort2(T *v, int beg, int end, FuncType func)
-{
+
+template<class FuncType, class T>
+void quickSort2(T *v, int beg, int end, FuncType func) {
     if (beg == end)
         return;
-    if (end - beg <= 90)
-    {
+    if (end - beg <= 90) {
         insertionSort(v + beg, end - beg, func);
-    }
-    else
-    {
+    } else {
         int pivoAleatorio = rand() % (end - beg) + beg; // escolhe um índice aleatório entre beg e end
         int pos = particiona(v, beg, end, pivoAleatorio, func);
         quickSort2(v, beg, pos, func);
         quickSort2(v, pos + 1, end, func);
     }
 }
-template <class FuncType, class T>
-int quickSort(T *v, int n, FuncType func)
-{
+
+template<class FuncType, class T>
+int quickSort(T *v, int n, FuncType func) {
     quickSort2(v, 0, n, func);
     return 0;
 }
 
-class DividendCompare
-{
+class DividendCompare {
 public:
     bool operator()(Wallet &a,
-                    Wallet &b) const
-    { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
+                    Wallet &b) const { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
         return a.getTotalDividends() < b.getTotalDividends();
     }
 };
 
-class WalletTickerCompare
-{
+class WalletTickerCompare {
 public:
     bool operator()(Wallet &a,
-                    Wallet &b) const
-    { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
+                    Wallet &b) const { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
 
         return a.getTicker() < b.getTicker();
     }
 };
 
-class DividendTickerCompare
-{
+class DividendTickerCompare {
 public:
     bool operator()(Wallet &a,
-                    Wallet &b) const
-    { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
-        if (a.getTotalDividends() == b.getTotalDividends())
-        {
+                    Wallet &b) const { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
+        if (a.getTotalDividends() == b.getTotalDividends()) {
             WalletTickerCompare tickerCompare;
             return tickerCompare(a, b);
         }
@@ -110,68 +109,57 @@ public:
     }
 };
 
-class QuantityCompare
-{
+class QuantityCompare {
 public:
     bool operator()(Wallet &a,
-                    Wallet &b) const
-    { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
+                    Wallet &b) const { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
         return a.getQuantity() > b.getQuantity();
     }
 };
 
-class PriceCompare
-{
+class PriceCompare {
 public:
     bool operator()(Wallet &a,
-                    Wallet &b) const
-    { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
+                    Wallet &b) const { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
         return a.getPurchasePrice() > b.getPurchasePrice();
     }
 };
 
-template <class T>
-class TickerCompare
-{
+template<class T>
+class TickerCompare {
 public:
     bool operator()(const T &a,
-                    const T &b) const
-    { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
+                    const T &b) const { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
         if (a.getTicker() == b.getTicker())
-            return a.getDate() < b.getDate();
+            return compareDates(a.getDate(), b.getDate());
         return a.getTicker() < b.getTicker();
     }
 };
 
-template <class T>
-class DateCompare
-{
+template<class T>
+class DateCompare {
 public:
     bool operator()(const T &a,
-                    const T &b) const
-    { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
+                    const T &b) const { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
         if (a.getDate() == b.getDate())
             return a.getTicker() < b.getTicker();
-        return a.getDate() < b.getDate();
+        return compareDates(a.getDate(), b.getDate());
     }
 };
-string formatFloat(int n)
-{
+
+string formatFloat(int n) {
     ostringstream stream;
     stream << (n / 100) << "." << setw(2) << setfill('0') << (n % 100);
     return stream.str();
 }
 
-int convertStringToInt(string s)
-{
+int convertStringToInt(string s) {
     return round(stod(s) * 100);
 }
 
-template <class T>
-void printData(T *array, int total)
-{
-    for (int i = 0; i < total; ++i)
-    {
+template<class T>
+void printData(T *array, int total) {
+    for (int i = 0; i < total; ++i) {
         cout << "Price: " << array[i].getPrice() << endl;
         cout << "Date: " << array[i].getDate() << endl;
         cout << "Ticker: " << array[i].getTicker() << endl;
@@ -179,10 +167,8 @@ void printData(T *array, int total)
     }
 }
 
-void printWalletData(Wallet *array, int total)
-{
-    for (int i = 0; i < total; ++i)
-    {
+void printWalletData(Wallet *array, int total) {
+    for (int i = 0; i < total; ++i) {
         cout << "Ticker: " << array[i].getTicker() << endl;
         cout << "Quantity: " << array[i].getQuantity() << endl;
         cout << "Purchase price: " << array[i].getPurchasePrice() << endl;
@@ -191,11 +177,9 @@ void printWalletData(Wallet *array, int total)
     }
 }
 
-template <class T>
-void readInitialData(T *array, int total)
-{
-    for (int i = 0; i < total; ++i)
-    {
+template<class T>
+void readInitialData(T *array, int total) {
+    for (int i = 0; i < total; ++i) {
         string price;
         string date;
         string ticker;
@@ -205,10 +189,8 @@ void readInitialData(T *array, int total)
     }
 }
 
-void readWalletData(Wallet *array, int total)
-{
-    for (int i = 0; i < total; ++i)
-    {
+void readWalletData(Wallet *array, int total) {
+    for (int i = 0; i < total; ++i) {
         int quantity;
         string ticker;
         string purchasePrice;
@@ -219,100 +201,71 @@ void readWalletData(Wallet *array, int total)
     }
 }
 
-template <class T>
-int buscaBin(T *array, int begin, int end, string date, int maior, bool getBiggestIndex)
-{
+template<class T>
+int buscaBin(T *array, int begin, int end, string date, int maior, bool getBiggestIndex) {
     if (begin > end)
         return maior;
     int meio = (end - begin) / 2 + begin;
-    if (array[meio].getDate() == date)
-    {
-        if (getBiggestIndex)
-        {
-            if (meio < end && array[meio + 1].getDate() == date)
-            {
+    if (array[meio].getDate() == date) {
+        if (getBiggestIndex) {
+            if (meio < end && array[meio + 1].getDate() == date) {
                 return buscaBin(array, meio + 1, end, date, maior, getBiggestIndex);
             }
-        }
-        else
-        {
-            if (meio > 0 && array[meio - 1].getDate() == date)
-            {
+        } else {
+            if (meio > 0 && array[meio - 1].getDate() == date) {
                 return buscaBin(array, begin, meio - 1, date, maior, getBiggestIndex);
             }
         }
         return meio;
     }
-    if (array[meio].getDate() > date)
-    {
+    if (compareDates(date, array[meio].getDate())) {
         maior = meio;
         return buscaBin(array, begin, meio - 1, date, maior, getBiggestIndex);
     }
     return buscaBin(array, meio + 1, end, date, maior, getBiggestIndex);
 }
 
-int getStockByTickerBinary(HistoryPrice *prices, int totalPrices, string ticker)
-{
+int getStockByTickerBinary(HistoryPrice *prices, int totalPrices, string ticker) {
     int left = 0;
     int right = totalPrices - 1;
-    while (left <= right)
-    {
+    while (left <= right) {
         int middle = (left + right) / 2;
-        if (prices[middle].getTicker() == ticker)
-        {
+        if (prices[middle].getTicker() == ticker) {
             return middle;
-        }
-        else if (prices[middle].getTicker() < ticker)
-        {
+        } else if (prices[middle].getTicker() < ticker) {
             left = middle + 1;
-        }
-        else
-        {
+        } else {
             right = middle - 1;
         }
     }
     return -1;
 }
 
-int getStockDayPriceSequencial(HistoryPrice *prices, int totalPrices, string ticker, string date)
-{
-    for (int i = 0; i < totalPrices; ++i)
-    {
-        if (prices[i].getTicker() == ticker && prices[i].getDate() == date)
-        {
+int getStockDayPriceSequencial(HistoryPrice *prices, int totalPrices, string ticker, string date) {
+    for (int i = 0; i < totalPrices; ++i) {
+        if (prices[i].getTicker() == ticker && prices[i].getDate() == date) {
             return prices[i].getPrice();
         }
     }
     return -1;
 }
-template <class T>
-int getArrayPriceByTicker(T *prices, int totalPrices, string ticker, string date)
-{
+
+template<class T>
+int getArrayPriceByTicker(T *prices, int totalPrices, string ticker, string date) {
     int left = 0;
     int right = totalPrices - 1;
-    while (left <= right)
-    {
+    while (left <= right) {
         int middle = (left + right) / 2;
-        if (prices[middle].getTicker() == ticker && prices[middle].getDate() == date)
-        {
+        if (prices[middle].getTicker() == ticker && prices[middle].getDate() == date) {
             return prices[middle].getPrice();
-        }
-        else if (prices[middle].getTicker() < ticker)
-        {
+        } else if (prices[middle].getTicker() < ticker) {
             left = middle + 1;
-        }
-        else if (prices[middle].getTicker() > ticker)
-        {
+        } else if (prices[middle].getTicker() > ticker) {
             right = middle - 1;
-        }
-        else
-        {
-            if (prices[middle].getDate() < date)
-            {
+        } else {
+            if (compareDates(prices[middle].getDate(), date)) {
                 left = middle + 1;
-            }
-            else
-            {
+            } else {
                 right = middle - 1;
             }
         }
@@ -320,31 +273,24 @@ int getArrayPriceByTicker(T *prices, int totalPrices, string ticker, string date
     return -1;
 }
 
-void printBuyStock(string ticker, int quantity, int price)
-{
+void printBuyStock(string ticker, int quantity, int price) {
     cout << left << setw(15) << ticker
          << left << setw(20) << quantity
          << left << setw(15) << formatFloat(price) << endl;
 }
 
-void buyStocks(Wallet *wallet, int totalWallet, HistoryPrice *prices, int totalPrices, string date, int newValue, int &totalnewPurchase)
-{
+void buyStocks(Wallet *wallet, int totalWallet, HistoryPrice *prices, int totalPrices, string date, int newValue,
+               int &totalnewPurchase) {
     Wallet *lowerStock = &wallet[0];
     int priceMinValorStockInDate = getArrayPriceByTicker(prices, totalPrices, lowerStock->getTicker(), date);
-    for (int i = 1; i < totalWallet; ++i)
-    {
+    for (int i = 1; i < totalWallet; ++i) {
         int stockUnitPriceInDate = getArrayPriceByTicker(prices, totalPrices, wallet[i].getTicker(), date);
-        if (stockUnitPriceInDate)
-        {
-            if (stockUnitPriceInDate * wallet[i].getQuantity() < priceMinValorStockInDate * lowerStock->getQuantity())
-            {
+        if (stockUnitPriceInDate) {
+            if (stockUnitPriceInDate * wallet[i].getQuantity() < priceMinValorStockInDate * lowerStock->getQuantity()) {
                 lowerStock = &wallet[i];
                 priceMinValorStockInDate = stockUnitPriceInDate;
-            }
-            else if (stockUnitPriceInDate == lowerStock->getPurchasePrice())
-            {
-                if (wallet[i].getTicker() < lowerStock->getTicker())
-                {
+            } else if (stockUnitPriceInDate * wallet[i].getQuantity() == priceMinValorStockInDate * lowerStock->getQuantity()) {
+                if (wallet[i].getTicker() < lowerStock->getTicker()) {
                     lowerStock = &wallet[i];
                     priceMinValorStockInDate = stockUnitPriceInDate;
                 }
@@ -354,8 +300,7 @@ void buyStocks(Wallet *wallet, int totalWallet, HistoryPrice *prices, int totalP
 
     int newQuantity = newValue / priceMinValorStockInDate;
     int newPurchasePrice = priceMinValorStockInDate * newQuantity;
-    if (newQuantity == 0 || newValue < newPurchasePrice)
-    {
+    if (newQuantity == 0 || newValue < newPurchasePrice) {
         return;
     }
     lowerStock->setQuantity(lowerStock->getQuantity() + newQuantity);
@@ -363,33 +308,31 @@ void buyStocks(Wallet *wallet, int totalWallet, HistoryPrice *prices, int totalP
     newValue -= newPurchasePrice;
     totalnewPurchase += newPurchasePrice;
     printBuyStock(lowerStock->getTicker(), newQuantity, newPurchasePrice);
-    if (newValue > 0)
-    {
+    if (newValue > 0) {
         buyStocks(wallet, totalWallet, prices, totalPrices, date, newValue, totalnewPurchase);
     }
 }
 
-int getDividendByTickerAndRangeDate(HistoryEarning *dividends, int totalDividends, string ticker, string startDate,
-                                    string endDate)
-{
+int getDividendByTickerAndRangeDate(HistoryEarning *earnings, int totalEarnings, string ticker, string startDate,
+                                    string endDate) {
     int left = 0;
-    int right = totalDividends - 1;
-    int fisrtDateInRange = buscaBin(dividends, left, right, startDate, -1, false);
-    int lastDateInRange = buscaBin(dividends, left, right, endDate, -1, true);
+    int right = totalEarnings - 1;
+    int fisrtDateInRange = buscaBin(earnings, left, right, startDate, -1, false);
+    int lastDateInRange = buscaBin(earnings, left, right, endDate, -1, true);
+    if (lastDateInRange == -1) {
+        lastDateInRange = totalEarnings - 1;
+    }
     int totalDividendsInRange = 0;
-    for (int i = fisrtDateInRange; i <= lastDateInRange; i++)
-    {
-        if (dividends[i].getTicker() == ticker)
-        {
-            totalDividendsInRange += dividends[i].getPrice();
+    for (int i = fisrtDateInRange; i <= lastDateInRange; i++) {
+        if (earnings[i].getTicker() == ticker) {
+            totalDividendsInRange += earnings[i].getPrice();
         }
     }
     return totalDividendsInRange;
 }
 
 MinMax getMaxMinDayPrice(HistoryPrice *prices, int totalPrices, Wallet *stocks, int totalStocks, string startDate,
-                         string endDate)
-{
+                         string endDate) {
 
     string *datesInRange = new string[totalPrices];
     int totalDatesInRange = 0;
@@ -397,8 +340,11 @@ MinMax getMaxMinDayPrice(HistoryPrice *prices, int totalPrices, Wallet *stocks, 
     int right = totalPrices - 1;
     int fisrtDateInRange = buscaBin(prices, left, right, startDate, -1, false);
     int lastDateInRange = buscaBin(prices, left, right, endDate, -1, true);
-    for (int i = fisrtDateInRange; i <= lastDateInRange; i++)
-    {
+    if (lastDateInRange == -1) {
+        lastDateInRange = totalPrices - 1;
+    }
+    cout << fisrtDateInRange << " -- " << lastDateInRange << endl;
+    for (int i = fisrtDateInRange; i <= lastDateInRange; i++) {
         datesInRange[totalDatesInRange] = prices[i].getDate();
         totalDatesInRange++;
     }
@@ -410,28 +356,22 @@ MinMax getMaxMinDayPrice(HistoryPrice *prices, int totalPrices, Wallet *stocks, 
     TickerCompare<HistoryPrice> tickerCompare;
     quickSort(prices, totalPrices, tickerCompare);
     // sort(prices, prices + totalPrices, TickerCompare<HistoryPrice>());
-    for (int i = 0; i < totalDatesInRange; i++)
-    {
+    for (int i = 0; i < totalDatesInRange; i++) {
         int dateTotalprice = 0;
-        for (int j = 0; j < totalStocks; j++)
-        {
+        for (int j = 0; j < totalStocks; j++) {
             int stockDayPrice = getArrayPriceByTicker(prices, totalPrices, stocks[j].getTicker(), datesInRange[i]);
             if (stockDayPrice == -1)
                 continue;
             dateTotalprice += stockDayPrice * stocks[j].getQuantity();
         }
-        if (minPrice == 0)
-        {
+        if (minPrice == 0) {
+            minPrice = dateTotalprice;
+            minDate = datesInRange[i];
+        } else if (dateTotalprice < minPrice) {
             minPrice = dateTotalprice;
             minDate = datesInRange[i];
         }
-        else if (dateTotalprice < minPrice)
-        {
-            minPrice = dateTotalprice;
-            minDate = datesInRange[i];
-        }
-        if (dateTotalprice > maxPrice)
-        {
+        if (dateTotalprice > maxPrice) {
             maxPrice = dateTotalprice;
             maxDate = datesInRange[i];
         }
@@ -440,19 +380,15 @@ MinMax getMaxMinDayPrice(HistoryPrice *prices, int totalPrices, Wallet *stocks, 
     return MinMax(maxDate, maxPrice, minDate, minPrice);
 }
 
-void prindMinMaxOperatorHeader(string header, string startDate, string endDate)
-{
-    if (header == "mostrarCabecalhos")
-    {
+void prindMinMaxOperatorHeader(string header, string startDate, string endDate) {
+    if (header == "mostrarCabecalhos") {
         cout << "Minimos e maximos no intervalo: ";
         cout << startDate << " a " << endDate << endl;
     }
 }
 
-void printDividendOperatorHeader(string header, string startDate, string endDate)
-{
-    if (header == "mostrarCabecalhos")
-    {
+void printDividendOperatorHeader(string header, string startDate, string endDate) {
+    if (header == "mostrarCabecalhos") {
         cout << "Dividendos no intervalo: ";
         cout << startDate << " a " << endDate << endl;
         cout << left << setw(15) << "Ticker"
@@ -463,10 +399,8 @@ void printDividendOperatorHeader(string header, string startDate, string endDate
     }
 }
 
-void printValorOperatorHeader(string header, string date)
-{
-    if (header == "mostrarCabecalhos")
-    {
+void printValorOperatorHeader(string header, string date) {
+    if (header == "mostrarCabecalhos") {
         cout << "Data: " << date << endl;
         cout << left << setw(15) << "Ticker"
              << left << setw(20) << "Quantidade"
@@ -476,8 +410,7 @@ void printValorOperatorHeader(string header, string date)
     }
 }
 
-void printValorOperator(string ticker, int quantity, int buyPrice, int dividend, int value)
-{
+void printValorOperator(string ticker, int quantity, int buyPrice, int dividend, int value) {
     cout << left << setw(15) << ticker
          << left << setw(20) << quantity
          << left << setw(15) << formatFloat(buyPrice)
@@ -485,10 +418,8 @@ void printValorOperator(string ticker, int quantity, int buyPrice, int dividend,
          << left << setw(15) << formatFloat(value) << endl;
 }
 
-void printBuyStockHeader(string header)
-{
-    if (header == "mostrarCabecalhos")
-    {
+void printBuyStockHeader(string header) {
+    if (header == "mostrarCabecalhos") {
         cout << "Dados do aporte:" << endl;
         cout << left << setw(15) << "Ticker"
              << left << setw(20) << "Quantidade"
@@ -497,23 +428,19 @@ void printBuyStockHeader(string header)
 }
 
 void handleActions(string action, string params, string header, HistoryPrice *prices, int totalPrices,
-                   HistoryEarning *earnings, int totalEarnings, Wallet *wallets, int totalWallets)
-{
+                   HistoryEarning *earnings, int totalEarnings, Wallet *wallets, int totalWallets) {
     // get first and last param
     string *paramsArray = new string[2];
     int i = 0;
     stringstream ssin(params);
-    while (ssin.good() && i < 2)
-    {
+    while (ssin.good() && i < 2) {
         ssin >> paramsArray[i];
         ++i;
     }
-    if (action == "valor")
-    {
+    if (action == "valor") {
         int totalValue = 0;
         printValorOperatorHeader(header, paramsArray[0]);
-        for (int j = 0; j < totalWallets; ++j)
-        {
+        for (int j = 0; j < totalWallets; ++j) {
             int price = getStockDayPriceSequencial(prices, totalPrices, wallets[j].getTicker(), paramsArray[0]) *
                         wallets[j].getQuantity();
             totalValue += price;
@@ -523,14 +450,12 @@ void handleActions(string action, string params, string header, HistoryPrice *pr
         cout << "Valor total da carteira: ";
         cout << left << setw(40) << "" << formatFloat(totalValue) << endl;
     }
-    if (action == "valorFast")
-    {
+    if (action == "valorFast") {
         printValorOperatorHeader(header, paramsArray[0]);
         TickerCompare<HistoryPrice> tickerCompare;
         quickSort(prices, totalPrices, tickerCompare);
         int totalValue = 0;
-        for (int j = 0; j < totalWallets; ++j)
-        {
+        for (int j = 0; j < totalWallets; ++j) {
             int price = getArrayPriceByTicker(prices, totalPrices, wallets[j].getTicker(), paramsArray[0]) *
                         wallets[j].getQuantity();
             totalValue += price;
@@ -540,18 +465,16 @@ void handleActions(string action, string params, string header, HistoryPrice *pr
         cout << "Valor total da carteira: ";
         cout << left << setw(40) << "" << formatFloat(totalValue) << endl;
     }
-    if (action == "dividendo")
-    {
+    if (action == "dividendo") {
         printDividendOperatorHeader(header, paramsArray[0], paramsArray[1]);
-        TickerCompare<HistoryEarning> tickerCompare;
-        quickSort(earnings, totalEarnings, tickerCompare);
+        DateCompare<HistoryEarning> dateCompare;
+        quickSort(earnings, totalEarnings, dateCompare);
         int totalDividend = 0;
-        for (int j = 0; j < totalWallets; ++j)
-        {
+        for (int j = 0; j < totalWallets; ++j) {
             int dividend =
-                getDividendByTickerAndRangeDate(earnings, totalEarnings, wallets[j].getTicker(), paramsArray[0],
-                                                paramsArray[1]) *
-                wallets[j].getQuantity();
+                    getDividendByTickerAndRangeDate(earnings, totalEarnings, wallets[j].getTicker(), paramsArray[0],
+                                                    paramsArray[1]) *
+                    wallets[j].getQuantity();
             totalDividend += dividend;
             printValorOperator(wallets[j].getTicker(), wallets[j].getQuantity(), wallets[j].getPurchasePrice(),
                                wallets[j].getTotalDividends(), dividend);
@@ -559,8 +482,7 @@ void handleActions(string action, string params, string header, HistoryPrice *pr
         cout << "Valor de dividendos: ";
         cout << left << setw(44) << "" << formatFloat(totalDividend) << endl;
     }
-    if (action == "mimax")
-    {
+    if (action == "mimax") {
         prindMinMaxOperatorHeader(header, paramsArray[0], paramsArray[1]);
         DateCompare<HistoryPrice> dateCompare;
         quickSort(prices, totalPrices, dateCompare);
@@ -570,37 +492,32 @@ void handleActions(string action, string params, string header, HistoryPrice *pr
         cout << setw(15) << "Valor maximo no dia " << minMax.getMaxDate() << ": ";
         cout << setw(15) << "" << setw(15) << formatFloat(minMax.getMaxPrice()) << endl;
     }
-    if (action == "ordenar")
-    {
-        if (paramsArray[0] == "ticker")
-        {
+    if (action == "ordenar") {
+        if (paramsArray[0] == "ticker") {
             WalletTickerCompare tickerCompare;
             quickSort(wallets, totalWallets, tickerCompare);
         }
-        if (paramsArray[0] == "quantidade")
-        {
+        if (paramsArray[0] == "quantidade") {
             QuantityCompare quantityCompare;
             quickSort(wallets, totalWallets, quantityCompare);
         }
-        if (paramsArray[0] == "preco")
-        {
+        if (paramsArray[0] == "preco") {
             PriceCompare priceCompare;
             quickSort(wallets, totalWallets, priceCompare);
         }
-        if (paramsArray[0] == "dividendo")
-        {
+        if (paramsArray[0] == "dividendo") {
             DividendCompare dividendCompare;
             quickSort(wallets, totalWallets, dividendCompare);
         }
-        if (paramsArray[0] == "dividendoticker")
-        {
+        if (paramsArray[0] == "dividendoticker") {
             DividendTickerCompare dividendTickerCompare;
             quickSort(wallets, totalWallets, dividendTickerCompare);
         }
     }
-    if (action == "aporte")
-    {
+    if (action == "aporte") {
         printBuyStockHeader(header);
+        TickerCompare<HistoryPrice> tickerCompare;
+//        quickSort(prices, totalPrices, tickerCompare);
         int convertedPrice = convertStringToInt(paramsArray[1]);
         int totalNewPurchase = 0;
         buyStocks(wallets, totalWallets, prices, totalPrices, paramsArray[0], convertedPrice, totalNewPurchase);
@@ -611,8 +528,7 @@ void handleActions(string action, string params, string header, HistoryPrice *pr
         cout << endl;
 }
 
-int main()
-{
+int main() {
     // Declaring variables
     int totalPrices;
     int totalEarnings;
@@ -621,8 +537,7 @@ int main()
     HistoryEarning *earnings;
     Wallet *wallets;
     // Reading inputs
-    try
-    {
+    try {
         cout << "Enter the number of prices: " << endl;
         cin >> totalPrices;
         prices = new HistoryPrice[totalPrices];
@@ -653,14 +568,10 @@ int main()
         string header = "";
         int i = 0;
 
-        while (getline(cin, line))
-        {
-            if (line != header && header == "")
-            {
+        while (getline(cin, line)) {
+            if (line != header && header == "") {
                 header = line;
-            }
-            else if (header != "")
-            {
+            } else if (header != "") {
                 string action = line.substr(0, line.find(" "));
                 string params = line.substr(line.find(" ") + 1, line.length());
                 handleActions(action, params, header, prices, totalPrices, earnings, totalEarnings, wallets,
@@ -669,8 +580,7 @@ int main()
             }
         }
     }
-    catch (exception &e)
-    {
+    catch (exception &e) {
         cout << "Error: " << e.what() << endl;
     }
     return 0;
