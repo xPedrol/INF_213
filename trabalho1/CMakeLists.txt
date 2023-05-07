@@ -16,4 +16,4 @@ add_executable(trabalho1
         SortMethods.cpp
         SortMethods.h
         Wallet.cpp
-        Wallet.h)
+        Wallet.h BoughtStock.h BoughtStock.cpp)
