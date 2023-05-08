@@ -1,7 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>
-#include <algorithm> // std::sort
+#include <algorithm> // std::unique
 #include <sstream>
 #include <string>
 #include "HistoryPrice.h"
@@ -11,6 +11,10 @@
 #include "BoughtStock.h"    // BoughtStock
 
 using namespace std;
+
+const string cp = "compacta";
+const string mc = "mostrarCabecalhos";
+const string ne = "naoMostrarCabecalhos";
 
 bool compareDates(const string &date1, const string &date2) {
     int year1 = stoi(date1.substr(6));
@@ -161,26 +165,6 @@ int convertStringToInt(const string &s) {
 }
 
 template<class T>
-void printData(T *array, int total) {
-    for (int i = 0; i < total; ++i) {
-        cout << "Price: " << array[i].getPrice() << endl;
-        cout << "Date: " << array[i].getDate() << endl;
-        cout << "Ticker: " << array[i].getTicker() << endl;
-        cout << endl;
-    }
-}
-
-void printWalletData(Wallet *array, int total) {
-    for (int i = 0; i < total; ++i) {
-        cout << "Ticker: " << array[i].getTicker() << endl;
-        cout << "Quantity: " << array[i].getQuantity() << endl;
-        cout << "Purchase price: " << array[i].getPurchasePrice() << endl;
-        cout << "Total dividends: " << array[i].getTotalDividends() << endl;
-        cout << endl;
-    }
-}
-
-template<class T>
 void readInitialData(T *array, int total) {
     for (int i = 0; i < total; ++i) {
         string price;
@@ -274,11 +258,6 @@ int getArrayPriceByTicker(T *prices, int totalPrices, string ticker, string date
     return -1;
 }
 
-void printBuyStock(const string &ticker, int quantity, int price) {
-    cout << left << setw(15) << ticker
-         << left << setw(20) << quantity
-         << left << setw(15) << formatFloat(price) << endl;
-}
 
 void buyStocks(Wallet *wallet, int totalWallet, HistoryPrice *prices, int totalPrices, const string &date, int newValue,
                int &totalnewPurchase, BoughtStock *boughtStocks, int &totalBoughtStocks) {
@@ -399,14 +378,14 @@ getMaxMinDayPrice(HistoryPrice *prices, int totalPrices, Wallet *stocks, int tot
 }
 
 void prindMinMaxOperatorHeader(const string &header, const string &startDate, const string &endDate) {
-    if (header == "mostrarCabecalhos") {
+    if (header == mc) {
         cout << "Minimos e maximos no intervalo: ";
         cout << startDate << " a " << endDate << endl;
     }
 }
 
 void printDividendOperatorHeader(const string &header, const string &startDate, const string &endDate) {
-    if (header == "mostrarCabecalhos") {
+    if (header == mc) {
         cout << "Dividendos no intervalo: ";
         cout << startDate << " a " << endDate << endl;
         cout << left << setw(7) << "Ticker"
@@ -418,39 +397,45 @@ void printDividendOperatorHeader(const string &header, const string &startDate, 
 }
 
 void printValorOperatorHeader(const string &header, const string &date) {
-    if (header == "mostrarCabecalhos") {
+    if (header == mc) {
         cout << "Data: " << date << endl;
-        cout << left << setw(7) << "Ticker"
-             << left << setw(18) << "Quantidade"
-             << left << setw(11) << "Compra"
-             << left << setw(18) << "Dividendo"
-             << "Valor" << endl;
+        cout << left << setw(6) << "Ticker"
+             << right << setw(11) << "Quantidade"
+             << right << setw(14) << "Compra"
+             << right << setw(14) << "Dividendo"
+             << right << setw(14) << "Valor" << endl;
     }
 }
 
 void printValorOperator(const string &ticker, int quantity, int buyPrice, int dividend, int value) {
-    cout << left << setw(14) << ticker
-         << left << setw(10) << quantity
-         << left << setw(15) << formatFloat(buyPrice)
-         << left << setw(13) << formatFloat(dividend)
-         << left << formatFloat(value) << endl;
+    cout << left << setw(6) << ticker
+         << right << setw(11) << quantity
+         << right << setw(14) << formatFloat(buyPrice)
+         << right << setw(14) << formatFloat(dividend)
+         << right << setw(14) << formatFloat(value) << endl;
 }
 
 void printDividendOperator(const string &ticker, int quantity, int buyPrice, int dividend, int value) {
-    cout << left << setw(14) << ticker
-         << left << setw(10) << quantity
-         << left << setw(15) << formatFloat(buyPrice)
-         << left << setw(14) << formatFloat(dividend)
-         << right << formatFloat(value) << endl;
+    cout << left << setw(6) << ticker
+         << right << setw(11) << quantity
+         << right << setw(14) << formatFloat(buyPrice)
+         << right << setw(14) << formatFloat(dividend)
+         << right << setw(14) << formatFloat(value) << endl;
 }
 
 void printBuyStockHeader(const string &header) {
-    if (header == "mostrarCabecalhos") {
+    if (header == mc) {
         cout << "Dados do aporte:" << endl;
-        cout << left << setw(15) << "Ticker"
-             << left << setw(20) << "Quantidade"
-             << left << setw(15) << "Valor" << endl;
+        cout << "Ticker"
+             << right << setw(11) << "Quantidade"
+             << right << setw(15) << "Valor" << endl;
     }
+}
+
+void printBuyStockOperator(const string &ticker, int quantity, int value) {
+    cout << left << setw(6) << ticker
+         << right << setw(11) << quantity
+         << right << setw(15) << formatFloat(value) << endl;
 }
 
 void
@@ -471,10 +456,15 @@ handleActions(const string &action, const string &params, const string &header, 
             int price = getStockDayPriceSequencial(prices, totalPrices, wallets[j].getTicker(), paramsArray[0]) *
                         wallets[j].getQuantity();
             totalValue += price;
-            printValorOperator(wallets[j].getTicker(), wallets[j].getQuantity(), wallets[j].getPurchasePrice(),
-                               wallets[j].getTotalDividends(), price);
+            if (header != cp) {
+                printValorOperator(wallets[j].getTicker(), wallets[j].getQuantity(), wallets[j].getPurchasePrice(),
+                                   wallets[j].getTotalDividends(), price);
+            }
         }
-        cout << left << setw(52) << "Valor total da carteira:";
+        if (header != cp) {
+            cout << "Valor total da carteira:";
+            cout << right << setw(35);
+        }
         cout << formatFloat(totalValue) << endl;
     }
     if (action == "valorFast") {
@@ -486,10 +476,15 @@ handleActions(const string &action, const string &params, const string &header, 
             int price = getArrayPriceByTicker(prices, totalPrices, wallets[j].getTicker(), paramsArray[0]) *
                         wallets[j].getQuantity();
             totalValue += price;
-            printValorOperator(wallets[j].getTicker(), wallets[j].getQuantity(), wallets[j].getPurchasePrice(),
-                               wallets[j].getTotalDividends(), price);
+            if (header != cp) {
+                printValorOperator(wallets[j].getTicker(), wallets[j].getQuantity(), wallets[j].getPurchasePrice(),
+                                   wallets[j].getTotalDividends(), price);
+            }
         }
-        cout << left << setw(52) << "Valor total da carteira:";
+        if (header != cp) {
+            cout << "Valor total da carteira:";
+            cout << right << setw(35);
+        }
         cout << formatFloat(totalValue) << endl;
     }
     if (action == "dividendo") {
@@ -503,20 +498,31 @@ handleActions(const string &action, const string &params, const string &header, 
                                                     paramsArray[1]) *
                     wallets[j].getQuantity();
             totalDividend += dividend;
-            printDividendOperator(wallets[j].getTicker(), wallets[j].getQuantity(), wallets[j].getPurchasePrice(),
-                               wallets[j].getTotalDividends(), dividend);
+            if (header != cp) {
+                printDividendOperator(wallets[j].getTicker(), wallets[j].getQuantity(), wallets[j].getPurchasePrice(),
+                                      wallets[j].getTotalDividends(), dividend);
+            }
         }
-        cout << "Valor de dividendos: ";
-        cout << right << setw(38) << formatFloat(totalDividend) << endl;
+        if (header != cp) {
+            cout << "Total de dividendos: ";
+            cout << right << setw(38);
+        }
+        cout << formatFloat(totalDividend) << endl;
     }
     if (action == "mimax") {
         prindMinMaxOperatorHeader(header, paramsArray[0], paramsArray[1]);
         DateCompare<HistoryPrice> dateCompare;
         quickSort(prices, totalPrices, dateCompare);
         MinMax minMax = getMaxMinDayPrice(prices, totalPrices, wallets, totalWallets, paramsArray[0], paramsArray[1]);
-        cout << "Valor minimo no dia " << minMax.getMinDate() << setw(8) << ":";
+        if (header != cp) {
+            cout << "Valor minimo no dia " << minMax.getMinDate() << ":";
+            cout << right << setw(14);
+        }
         cout << formatFloat(minMax.getMinPrice()) << endl;
-        cout << "Valor maximo no dia " << minMax.getMaxDate() << setw(8) << ":";
+        if (header != cp) {
+            cout << "Valor maximo no dia " << minMax.getMaxDate() << ":";
+            cout << right << setw(14);
+        }
         cout << formatFloat(minMax.getMaxPrice()) << endl;
     }
     if (action == "ordenar") {
@@ -549,13 +555,21 @@ handleActions(const string &action, const string &params, const string &header, 
         int totalBoughtStocks = 0;
         buyStocks(wallets, totalWallets, prices, totalPrices, paramsArray[0], convertedPrice, totalNewPurchase,
                   boughtStocks, totalBoughtStocks);
-        for (int j = 0; j < totalBoughtStocks; ++j) {
-            printBuyStock(boughtStocks[j].getTicker(), boughtStocks[j].getQuantity(), boughtStocks[j].getPrice());
+        if (header != cp) {
+            for (int j = 0; j < totalBoughtStocks; ++j) {
+                printBuyStockOperator(boughtStocks[j].getTicker(), boughtStocks[j].getQuantity(),
+                                      boughtStocks[j].getPrice());
+            }
         }
-        cout << setw(15) << "Total do aporte: ";
-        cout << setw(18) << "" << formatFloat(totalNewPurchase) << endl;
+        delete[] boughtStocks;
+        if (header != cp) {
+            cout << "Total aportado:";
+            cout << right << setw(17);
+        }
+        cout << formatFloat(totalNewPurchase) << endl;
     }
-    if (header == "mostrarCabecalhos")
+    delete[] paramsArray;
+    if (header == mc)
         cout << endl;
 }
 
@@ -614,5 +628,8 @@ int main() {
     catch (exception &e) {
         cout << "Error: " << e.what() << endl;
     }
+    delete[] prices;
+    delete[] earnings;
+    delete[] wallets;
     return 0;
 }
