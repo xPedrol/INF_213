@@ -36,7 +36,7 @@ class DividendCompare {
 public:
     bool operator()(Wallet &a,
                     Wallet &b) const { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
-        return a.getTotalDividends() > b.getTotalDividends();
+        return a.getTotalDividends() < b.getTotalDividends();
     }
 };
 
