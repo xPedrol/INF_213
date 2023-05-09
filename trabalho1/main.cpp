@@ -36,7 +36,7 @@ class DividendCompare {
 public:
     bool operator()(Wallet &a,
                     Wallet &b) const { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
-        return a.getTotalDividends() < b.getTotalDividends();
+        return a.getTotalDividends() > b.getTotalDividends();
     }
 };
 
@@ -100,6 +100,18 @@ public:
     }
 };
 
+class PriceQuantityCompare {
+public:
+    bool operator()(Wallet &a,
+                    const int &aPrice, Wallet &b,
+                    const int &bPrice) const { // retorna true se o local correto do objeto "a" for antes do local correto do objeto "b"
+        if ((a.getQuantity() * aPrice) == (b.getQuantity() * bPrice)) {
+            return a.getTicker() < b.getTicker();
+        }
+        return (a.getQuantity() * aPrice) < (b.getQuantity() * bPrice);
+    }
+};
+
 template<class FuncType, class T>
 void insertionSort(T *v, int n, FuncType func) {
     for (int i = 1; i < n; i++) {
@@ -112,6 +124,29 @@ void insertionSort(T *v, int n, FuncType func) {
         }
         v[j + 1] = elemInserir;
     }
+}
+
+template<class T>
+int getPriceByTicker(T *prices, int totalPrices, string ticker, string date) {
+    int left = 0;
+    int right = totalPrices - 1;
+    while (left <= right) {
+        int middle = (left + right) / 2;
+        if (prices[middle].getTicker() == ticker && prices[middle].getDate() == date) {
+            return prices[middle].getPrice();
+        } else if (prices[middle].getTicker() < ticker) {
+            left = middle + 1;
+        } else if (prices[middle].getTicker() > ticker) {
+            right = middle - 1;
+        } else {
+            if (compareDates(prices[middle].getDate(), date)) {
+                left = middle + 1;
+            } else {
+                right = middle - 1;
+            }
+        }
+    }
+    return -1;
 }
 
 // particiona o subvetor v[beg, ..., end - 1]
@@ -134,6 +169,26 @@ int particiona(T *v, int beg, int end, int pivo, FuncType func) {
     swap(v[pos], v[end - 1]);
     return pos;
 }
+
+//int particionaByPrice(Wallet *v, int beg, int end, int pivo) {
+//    Wallet valorPivo = v[pivo];
+//    PriceQuantityCompare priceQuantityCompare;
+//    // colocamos o pivo temporariamente na ultima posição
+//    swap(v[pivo], v[end - 1]);
+//    // ao acharmos um elemento menor do que o pivo, vamos coloca-lo
+//    // na posicao "pos"
+//    int pos = beg;
+//    for (int i = beg; i < end - 1; i++) {
+//        int aPrice = getPriceByTicker(v, end - beg, v[i].getTicker(), v[i].getDate());
+//        if (func(v[i], valorPivo)) {
+//            swap(v[pos], v[i]);
+//            pos++;
+//        }
+//    }
+//    // coloque o pivo depois do ultimo elemento menor que ele
+//    swap(v[pos], v[end - 1]);
+//    return pos;
+//}
 
 template<class FuncType, class T>
 void quickSort2(T *v, int beg, int end, FuncType func) {
@@ -219,6 +274,9 @@ int buscaBinByTicker(T *array, const int &begin, const int &end, const string &t
         return maior;
     int meio = (end - begin) / 2 + begin;
     if (array[meio].getTicker() == ticker) {
+        while (meio > 0 && array[meio - 1].getTicker() == ticker) {
+            meio--;
+        }
         return meio;
     }
     if (array[meio].getTicker() > ticker) {
@@ -237,79 +295,79 @@ int getStockDayPriceSequencial(HistoryPrice *prices, int totalPrices, const stri
     return -1;
 }
 
-template<class T>
-int getArrayPriceByTicker(T *prices, int totalPrices, string ticker, string date) {
-    int left = 0;
-    int right = totalPrices - 1;
-    while (left <= right) {
-        int middle = (left + right) / 2;
-        if (prices[middle].getTicker() == ticker && prices[middle].getDate() == date) {
-            return prices[middle].getPrice();
-        } else if (prices[middle].getTicker() < ticker) {
-            left = middle + 1;
-        } else if (prices[middle].getTicker() > ticker) {
-            right = middle - 1;
-        } else {
-            if (compareDates(prices[middle].getDate(), date)) {
-                left = middle + 1;
-            } else {
-                right = middle - 1;
+class SmallerPriceStock {
+private:
+    int ismallerPrice;
+    int ismallerStock;
+public:
+    SmallerPriceStock(int ismallerPrice, int ismallerStock) : ismallerPrice(ismallerPrice),
+                                                              ismallerStock(ismallerStock) {}
+
+    int getIsmallerPrice() const {
+        return ismallerPrice;
+    }
+
+    int getIsmallerStock() const {
+        return ismallerStock;
+    }
+};
+
+SmallerPriceStock getSmallerPriceStock(HistoryPrice *prices, int totalPrices, Wallet *stocks, const int &totalStocks,
+                                       const string &date) {
+    int iSmallerPrice = buscaBinByDate(prices, 0, totalPrices - 1, date, -1, false);
+    int iSmallerStock = buscaBinByTicker(stocks, 0, totalStocks - 1, prices[iSmallerPrice].getTicker(), -1);
+    if (iSmallerStock != -1 && stocks[iSmallerStock].getTicker() == prices[iSmallerPrice].getTicker()) {
+        PriceQuantityCompare priceQuantityCompare;
+        for (int i = iSmallerPrice + 1; prices[i].getDate() == date; i++) {
+            int iStock = buscaBinByTicker(stocks, 0, totalStocks - 1, prices[i].getTicker(), -1);
+            if (iStock != -1 && stocks[iStock].getTicker() == prices[i].getTicker()) {
+                if (priceQuantityCompare(stocks[iStock], prices[i].getPrice(), stocks[iSmallerStock],
+                                         prices[iSmallerPrice].getPrice())) {
+                    iSmallerPrice = i;
+                    iSmallerStock = iStock;
+                }
             }
         }
     }
-    return -1;
+    return {iSmallerPrice, iSmallerStock};
 }
 
 
 void buyStocks(Wallet *wallet, int totalWallet, HistoryPrice *prices, int totalPrices, const string &date, int newValue,
                int &totalnewPurchase, BoughtStock *boughtStocks, int &totalBoughtStocks) {
-    Wallet *lowerStock = &wallet[0];
-    int priceMinValorStockInDate = getArrayPriceByTicker(prices, totalPrices, lowerStock->getTicker(), date);
-    for (int i = 1; i < totalWallet; i++) {
-        int stockUnitPriceInDate = getArrayPriceByTicker(prices, totalPrices, wallet[i].getTicker(), date);
-        if (stockUnitPriceInDate) {
-            if (stockUnitPriceInDate * wallet[i].getQuantity() < priceMinValorStockInDate * lowerStock->getQuantity()) {
-                lowerStock = &wallet[i];
-                priceMinValorStockInDate = stockUnitPriceInDate;
-            } else if (stockUnitPriceInDate * wallet[i].getQuantity() ==
-                       priceMinValorStockInDate * lowerStock->getQuantity()) {
-                if (wallet[i].getTicker() < lowerStock->getTicker()) {
-                    lowerStock = &wallet[i];
-                    priceMinValorStockInDate = stockUnitPriceInDate;
-                }
-            }
-        }
-    }
+    SmallerPriceStock smallerPriceStock = getSmallerPriceStock(prices, totalPrices, wallet, totalWallet, date);
 
-    if (newValue < priceMinValorStockInDate) {
+    HistoryPrice *lowerPrice = &prices[smallerPriceStock.getIsmallerPrice()];
+    Wallet *lowerStock = &wallet[smallerPriceStock.getIsmallerStock()];
+    if (newValue < lowerPrice->getPrice()) {
         return;
     }
     lowerStock->setQuantity(lowerStock->getQuantity() + 1);
-    lowerStock->setPurchasePrice(lowerStock->getPurchasePrice() + priceMinValorStockInDate);
-    newValue -= priceMinValorStockInDate;
-    totalnewPurchase += priceMinValorStockInDate;
+    lowerStock->setPurchasePrice(lowerStock->getPurchasePrice() + lowerPrice->getPrice());
+    newValue -= lowerPrice->getPrice();
+    totalnewPurchase += lowerPrice->getPrice();
     if (totalBoughtStocks == 0) {
-        boughtStocks[totalBoughtStocks] = BoughtStock(lowerStock->getTicker(), 1, priceMinValorStockInDate);
+        boughtStocks[totalBoughtStocks] = BoughtStock(lowerStock->getTicker(), 1, lowerPrice->getPrice());
         totalBoughtStocks++;
     } else {
         if (totalBoughtStocks == 1 && boughtStocks[0].getTicker() == lowerStock->getTicker()) {
             boughtStocks[0].setQuantity(boughtStocks[0].getQuantity() + 1);
-            boughtStocks[0].setPrice(boughtStocks[0].getPrice() + priceMinValorStockInDate);
+            boughtStocks[0].setPrice(boughtStocks[0].getPrice() + lowerPrice->getPrice());
         } else {
             int stockIndex = buscaBinByTicker(boughtStocks, 0, totalBoughtStocks - 1, lowerStock->getTicker(), -1);
             if (stockIndex != -1 && boughtStocks[stockIndex].getTicker() == lowerStock->getTicker()) {
                 boughtStocks[stockIndex].setQuantity(boughtStocks[stockIndex].getQuantity() + 1);
-                boughtStocks[stockIndex].setPrice(boughtStocks[stockIndex].getPrice() + priceMinValorStockInDate);
+                boughtStocks[stockIndex].setPrice(boughtStocks[stockIndex].getPrice() + lowerPrice->getPrice());
             } else {
                 totalBoughtStocks++;
                 if (stockIndex == -1) {
                     boughtStocks[totalBoughtStocks - 1] = BoughtStock(lowerStock->getTicker(), 1,
-                                                                      priceMinValorStockInDate);
+                                                                      lowerPrice->getPrice());
                 } else {
                     for (int i = totalBoughtStocks - 1; i > stockIndex; i--) {
                         boughtStocks[i] = boughtStocks[i - 1];
                     }
-                    boughtStocks[stockIndex] = BoughtStock(lowerStock->getTicker(), 1, priceMinValorStockInDate);
+                    boughtStocks[stockIndex] = BoughtStock(lowerStock->getTicker(), 1, lowerPrice->getPrice());
                 }
 
             }
@@ -374,7 +432,7 @@ getMaxMinDayPrice(HistoryPrice *prices, int totalPrices, Wallet *stocks, int tot
     for (int i = 0; i < totalDatesInRange; i++) {
         int dateTotalprice = 0;
         for (int j = 0; j < totalStocks; j++) {
-            int stockDayPrice = getArrayPriceByTicker(prices, totalPrices, stocks[j].getTicker(), datesInRange[i]);
+            int stockDayPrice = getPriceByTicker(prices, totalPrices, stocks[j].getTicker(), datesInRange[i]);
             if (stockDayPrice == -1)
                 continue;
             dateTotalprice += stockDayPrice * stocks[j].getQuantity();
@@ -488,7 +546,7 @@ handleActions(const string &action, const string &params, const string &header, 
         quickSort(prices, totalPrices, tickerCompare);
         int totalValue = 0;
         for (int j = 0; j < totalWallets; j++) {
-            int price = getArrayPriceByTicker(prices, totalPrices, wallets[j].getTicker(), paramsArray[0]) *
+            int price = getPriceByTicker(prices, totalPrices, wallets[j].getTicker(), paramsArray[0]) *
                         wallets[j].getQuantity();
             totalValue += price;
             if (header != cp) {
@@ -568,6 +626,10 @@ handleActions(const string &action, const string &params, const string &header, 
         int totalNewPurchase = 0;
         auto *boughtStocks = new BoughtStock[totalWallets];
         int totalBoughtStocks = 0;
+        DateCompare<HistoryPrice> dateCompare;
+        quickSort(prices, totalPrices, dateCompare);
+        OnlyTickerCompare<Wallet> tickerCompare;
+        quickSort(wallets, totalWallets, tickerCompare);
         buyStocks(wallets, totalWallets, prices, totalPrices, paramsArray[0], convertedPrice, totalNewPurchase,
                   boughtStocks, totalBoughtStocks);
         if (header != cp) {
