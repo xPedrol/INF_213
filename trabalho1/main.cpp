@@ -470,6 +470,9 @@ handleActions(const string &action, const string &params, const string &header, 
         for (int j = 0; j < totalWallets; j++) {
             int price = getStockDayPriceSequencial(prices, totalPrices, wallets[j].getTicker(), paramsArray[0]) *
                         wallets[j].getQuantity();
+            if(price < 0) {
+                price = 0;
+            }
             totalValue += price;
             if (header != cp) {
                 printValorOperator(wallets[j].getTicker(), wallets[j].getQuantity(), wallets[j].getPurchasePrice(),
@@ -490,6 +493,9 @@ handleActions(const string &action, const string &params, const string &header, 
         for (int j = 0; j < totalWallets; j++) {
             int price = getArrayPriceByTicker(prices, totalPrices, wallets[j].getTicker(), paramsArray[0]) *
                         wallets[j].getQuantity();
+            if(price < 0) {
+                price = 0;
+            }
             totalValue += price;
             if (header != cp) {
                 printValorOperator(wallets[j].getTicker(), wallets[j].getQuantity(), wallets[j].getPurchasePrice(),
