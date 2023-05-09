@@ -10,6 +10,7 @@
 #include "Wallet.h"
 #include "MinMax.h"
 #include "BoughtStock.h"    // BoughtStock
+#include "StockPriceQtd.h"
 
 using namespace std;
 
@@ -260,21 +261,70 @@ int getArrayPriceByTicker(T *prices, int totalPrices, string ticker, string date
     return -1;
 }
 
+void printBuyStockOperator(const string &ticker, int quantity, int value) {
+    cout << left << setw(6) << ticker
+         << right << setw(11) << quantity
+         << right << setw(14) << formatFloat(value) << endl;
+}
 
-void buyStocks(Wallet *wallet, int totalWallet, HistoryPrice *prices, int totalPrices, const string &date, int newValue,
+
+void
+buyStocks2(Wallet *stock, int totalStock, HistoryPrice *prices, int totalPrices, const string &date, int newValue,
+           int &totalnewPurchase, StockPriceQtd *stockPriceQtd) {
+
+    for (int i = 0; i < totalStock; i++) {
+        stockPriceQtd[i].setStockIndex(i);
+        stockPriceQtd[i].setPrice(getArrayPriceByTicker(prices, totalPrices, stock[i].getTicker(), date));
+        if(stockPriceQtd[i].getPrice() == -1){
+            return;
+        }
+    }
+    quickSort(stockPriceQtd, totalStock, [](StockPriceQtd a, StockPriceQtd b) {
+        return a.getPrice() < b.getPrice();
+    });
+    while (newValue > 0) {
+        int smallerStockPrice = stockPriceQtd[0].getPrice();
+        int secondSmallerStockPrice = stockPriceQtd[1].getPrice();
+        Wallet *smallerStock = &stock[stockPriceQtd[0].getStockIndex()];
+        Wallet *secondSmallerStock = &stock[stockPriceQtd[1].getStockIndex()];
+        int maxBuyValue = (secondSmallerStockPrice * secondSmallerStock->getQuantity() -
+                           smallerStockPrice * smallerStock->getQuantity());
+        int qtdToBuy = ceil(maxBuyValue / smallerStockPrice);
+        if (qtdToBuy > newValue) {
+            break;
+        }
+        newValue -= qtdToBuy * smallerStockPrice;
+        smallerStock->setQuantity(smallerStock->getQuantity() + qtdToBuy);
+        totalnewPurchase += qtdToBuy * smallerStockPrice;
+        stockPriceQtd[0].setPrice(smallerStockPrice + qtdToBuy * smallerStockPrice);
+        printBuyStockOperator(smallerStock->getTicker(), qtdToBuy, qtdToBuy * smallerStockPrice);
+        quickSort(stockPriceQtd, totalStock, [](StockPriceQtd a, StockPriceQtd b) {
+            return a.getPrice() < b.getPrice();
+        });
+//        for (int i = 0; i < totalStock - 1; i++) {
+//            if (stockPriceQtd[i].getPrice() > stockPriceQtd[i + 1].getPrice()) {
+//                swap(stockPriceQtd[i], stockPriceQtd[i + 1]);
+//            } else {
+//                break;
+//            }
+//        }
+    }
+}
+
+void buyStocks(Wallet *stock, int totalStock, HistoryPrice *prices, int totalPrices, const string &date, int newValue,
                int &totalnewPurchase, BoughtStock *boughtStocks, int &totalBoughtStocks) {
-    Wallet *lowerStock = &wallet[0];
+    Wallet *lowerStock = &stock[0];
     int priceMinValorStockInDate = getArrayPriceByTicker(prices, totalPrices, lowerStock->getTicker(), date);
-    for (int i = 1; i < totalWallet; i++) {
-        int stockUnitPriceInDate = getArrayPriceByTicker(prices, totalPrices, wallet[i].getTicker(), date);
+    for (int i = 1; i < totalStock; i++) {
+        int stockUnitPriceInDate = getArrayPriceByTicker(prices, totalPrices, stock[i].getTicker(), date);
         if (stockUnitPriceInDate) {
-            if (stockUnitPriceInDate * wallet[i].getQuantity() < priceMinValorStockInDate * lowerStock->getQuantity()) {
-                lowerStock = &wallet[i];
+            if (stockUnitPriceInDate * stock[i].getQuantity() < priceMinValorStockInDate * lowerStock->getQuantity()) {
+                lowerStock = &stock[i];
                 priceMinValorStockInDate = stockUnitPriceInDate;
-            } else if (stockUnitPriceInDate * wallet[i].getQuantity() ==
+            } else if (stockUnitPriceInDate * stock[i].getQuantity() ==
                        priceMinValorStockInDate * lowerStock->getQuantity()) {
-                if (wallet[i].getTicker() < lowerStock->getTicker()) {
-                    lowerStock = &wallet[i];
+                if (stock[i].getTicker() < lowerStock->getTicker()) {
+                    lowerStock = &stock[i];
                     priceMinValorStockInDate = stockUnitPriceInDate;
                 }
             }
@@ -316,7 +366,7 @@ void buyStocks(Wallet *wallet, int totalWallet, HistoryPrice *prices, int totalP
         }
     }
     if (newValue > 0) {
-        buyStocks(wallet, totalWallet, prices, totalPrices, date, newValue, totalnewPurchase, boughtStocks,
+        buyStocks(stock, totalStock, prices, totalPrices, date, newValue, totalnewPurchase, boughtStocks,
                   totalBoughtStocks);
     }
 }
@@ -447,15 +497,10 @@ void printBuyStockHeader(const string &header) {
     }
 }
 
-void printBuyStockOperator(const string &ticker, int quantity, int value) {
-    cout << left << setw(6) << ticker
-         << right << setw(11) << quantity
-         << right << setw(14) << formatFloat(value) << endl;
-}
 
 void
 handleActions(const string &action, const string &params, const string &header, HistoryPrice *prices, int totalPrices,
-              HistoryEarning *earnings, int totalEarnings, Wallet *wallets, int totalWallets) {
+              HistoryEarning *earnings, int totalEarnings, Wallet *stocks, int totalStocks) {
     // get first and last param
     auto *paramsArray = new string[2];
     int i = 0;
@@ -467,16 +512,16 @@ handleActions(const string &action, const string &params, const string &header, 
     if (action == "valor") {
         int totalValue = 0;
         printValorOperatorHeader(header, paramsArray[0]);
-        for (int j = 0; j < totalWallets; j++) {
-            int price = getStockDayPriceSequencial(prices, totalPrices, wallets[j].getTicker(), paramsArray[0]) *
-                        wallets[j].getQuantity();
-            if(price < 0) {
+        for (int j = 0; j < totalStocks; j++) {
+            int price = getStockDayPriceSequencial(prices, totalPrices, stocks[j].getTicker(), paramsArray[0]) *
+                        stocks[j].getQuantity();
+            if (price < 0) {
                 price = 0;
             }
             totalValue += price;
             if (header != cp) {
-                printValorOperator(wallets[j].getTicker(), wallets[j].getQuantity(), wallets[j].getPurchasePrice(),
-                                   wallets[j].getTotalDividends(), price);
+                printValorOperator(stocks[j].getTicker(), stocks[j].getQuantity(), stocks[j].getPurchasePrice(),
+                                   stocks[j].getTotalDividends(), price);
             }
         }
         if (header != cp) {
@@ -490,16 +535,16 @@ handleActions(const string &action, const string &params, const string &header, 
         TickerCompare<HistoryPrice> tickerCompare;
         quickSort(prices, totalPrices, tickerCompare);
         int totalValue = 0;
-        for (int j = 0; j < totalWallets; j++) {
-            int price = getArrayPriceByTicker(prices, totalPrices, wallets[j].getTicker(), paramsArray[0]) *
-                        wallets[j].getQuantity();
-            if(price < 0) {
+        for (int j = 0; j < totalStocks; j++) {
+            int price = getArrayPriceByTicker(prices, totalPrices, stocks[j].getTicker(), paramsArray[0]) *
+                        stocks[j].getQuantity();
+            if (price < 0) {
                 price = 0;
             }
             totalValue += price;
             if (header != cp) {
-                printValorOperator(wallets[j].getTicker(), wallets[j].getQuantity(), wallets[j].getPurchasePrice(),
-                                   wallets[j].getTotalDividends(), price);
+                printValorOperator(stocks[j].getTicker(), stocks[j].getQuantity(), stocks[j].getPurchasePrice(),
+                                   stocks[j].getTotalDividends(), price);
             }
         }
         if (header != cp) {
@@ -513,15 +558,15 @@ handleActions(const string &action, const string &params, const string &header, 
         DateCompare<HistoryEarning> dateCompare;
         quickSort(earnings, totalEarnings, dateCompare);
         int totalDividend = 0;
-        for (int j = 0; j < totalWallets; j++) {
+        for (int j = 0; j < totalStocks; j++) {
             int dividend =
-                    getDividendByTickerAndRangeDate(earnings, totalEarnings, wallets[j].getTicker(), paramsArray[0],
+                    getDividendByTickerAndRangeDate(earnings, totalEarnings, stocks[j].getTicker(), paramsArray[0],
                                                     paramsArray[1]) *
-                    wallets[j].getQuantity();
+                    stocks[j].getQuantity();
             totalDividend += dividend;
             if (header != cp) {
-                printDividendOperator(wallets[j].getTicker(), wallets[j].getQuantity(), wallets[j].getPurchasePrice(),
-                                      wallets[j].getTotalDividends(), dividend);
+                printDividendOperator(stocks[j].getTicker(), stocks[j].getQuantity(), stocks[j].getPurchasePrice(),
+                                      stocks[j].getTotalDividends(), dividend);
             }
         }
         if (header != cp) {
@@ -534,7 +579,7 @@ handleActions(const string &action, const string &params, const string &header, 
         prindMinMaxOperatorHeader(header, paramsArray[0], paramsArray[1]);
         DateCompare<HistoryPrice> dateCompare;
         quickSort(prices, totalPrices, dateCompare);
-        MinMax minMax = getMaxMinDayPrice(prices, totalPrices, wallets, totalWallets, paramsArray[0], paramsArray[1]);
+        MinMax minMax = getMaxMinDayPrice(prices, totalPrices, stocks, totalStocks, paramsArray[0], paramsArray[1]);
         if (header != cp) {
             cout << "Valor minimo no dia " << minMax.getMinDate() << ":";
             cout << right << setw(14);
@@ -549,40 +594,33 @@ handleActions(const string &action, const string &params, const string &header, 
     if (action == "ordenar") {
         if (paramsArray[0] == "ticker") {
             OnlyTickerCompare<Wallet> tickerCompare;
-            quickSort(wallets, totalWallets, tickerCompare);
+            quickSort(stocks, totalStocks, tickerCompare);
         }
         if (paramsArray[0] == "quantidade") {
             QuantityCompare quantityCompare;
-            quickSort(wallets, totalWallets, quantityCompare);
+            quickSort(stocks, totalStocks, quantityCompare);
         }
         if (paramsArray[0] == "preco") {
             PriceCompare priceCompare;
-            quickSort(wallets, totalWallets, priceCompare);
+            quickSort(stocks, totalStocks, priceCompare);
         }
         if (paramsArray[0] == "dividendo") {
             DividendCompare dividendCompare;
-            quickSort(wallets, totalWallets, dividendCompare);
+            quickSort(stocks, totalStocks, dividendCompare);
         }
         if (paramsArray[0] == "dividendoticker") {
             DividendTickerCompare dividendTickerCompare;
-            quickSort(wallets, totalWallets, dividendTickerCompare);
+            quickSort(stocks, totalStocks, dividendTickerCompare);
         }
     }
     if (action == "aporte") {
         printBuyStockHeader(header);
         int convertedPrice = convertStringToInt(paramsArray[1]);
         int totalNewPurchase = 0;
-        auto *boughtStocks = new BoughtStock[totalWallets];
-        int totalBoughtStocks = 0;
-        buyStocks(wallets, totalWallets, prices, totalPrices, paramsArray[0], convertedPrice, totalNewPurchase,
-                  boughtStocks, totalBoughtStocks);
-        if (header != cp) {
-            for (int j = 0; j < totalBoughtStocks; j++) {
-                printBuyStockOperator(boughtStocks[j].getTicker(), boughtStocks[j].getQuantity(),
-                                      boughtStocks[j].getPrice());
-            }
-        }
-        delete[] boughtStocks;
+        auto *stockPriceQtd = new StockPriceQtd[totalStocks];
+        buyStocks2(stocks, totalStocks, prices, totalPrices, paramsArray[0], convertedPrice, totalNewPurchase,
+                   stockPriceQtd);
+        delete[] stockPriceQtd;
         if (header != cp) {
             cout << "Total aportado:";
             cout << right << setw(16);
@@ -603,7 +641,7 @@ int main() {
     int totalStocks;
     HistoryPrice *prices;
     HistoryEarning *earnings;
-    Wallet *wallets;
+    Wallet *stocks;
     // Reading inputs
     try {
 //        cout << "Enter the number of prices: " << endl;
@@ -616,10 +654,10 @@ int main() {
         earnings = new HistoryEarning[totalEarnings];
         readInitialData(earnings, totalEarnings);
 
-//        cout << "Enter the number of wallet's stocks: " << endl;
+//        cout << "Enter the number of stock's stocks: " << endl;
         cin >> totalStocks;
-        wallets = new Wallet[totalStocks];
-        readWalletData(wallets, totalStocks);
+        stocks = new Wallet[totalStocks];
+        readWalletData(stocks, totalStocks);
 
         // Printing data
 //        cout << "Printing history prices: " << endl;
@@ -628,8 +666,8 @@ int main() {
 //        cout << "Printing history earnings: " << endl;
 //        printData(earnings, totalEarnings);
 //        cout << "--------------------------------------------" << endl;
-//        cout << "Printing wallets: " << endl;
-//        printWalletData(wallets, totalStocks);
+//        cout << "Printing stocks: " << endl;
+//        printWalletData(stocks, totalStocks);
 
         // Reading rest of inputs
         string line;
@@ -642,7 +680,7 @@ int main() {
             } else if (!header.empty()) {
                 string action = line.substr(0, line.find(' '));
                 string params = line.substr(line.find(' ') + 1, line.length());
-                handleActions(action, params, header, prices, totalPrices, earnings, totalEarnings, wallets,
+                handleActions(action, params, header, prices, totalPrices, earnings, totalEarnings, stocks,
                               totalStocks);
                 i++;
             }
@@ -653,7 +691,7 @@ int main() {
     }
     delete[] prices;
     delete[] earnings;
-    delete[] wallets;
+    delete[] stocks;
 //    auto end_time = chrono::high_resolution_clock::now();
 //    auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time);
 //    cout << "O programa levou " << duration.count() << " microssegundos para ser executado\n";
