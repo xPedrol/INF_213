@@ -1,3 +1,4 @@
+#include <chrono>
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -166,7 +167,7 @@ int convertStringToInt(const string &s) {
 
 template<class T>
 void readInitialData(T *array, int total) {
-    for (int i = 0; i < total; ++i) {
+    for (int i = 0; i < total; i++) {
         string price;
         string date;
         string ticker;
@@ -177,14 +178,14 @@ void readInitialData(T *array, int total) {
 }
 
 void readWalletData(Wallet *array, int total) {
-    for (int i = 0; i < total; ++i) {
+    for (int i = 0; i < total; i++) {
         int quantity;
         string ticker;
         string purchasePrice;
         string totalDividends;
 //        cout << "Enter the ticker, quantity, purchase price and total dividends at position " << i << ": " << endl;
         cin >> ticker >> quantity >> purchasePrice >> totalDividends;
-        array[i] = Wallet(quantity, ticker, convertStringToInt(purchasePrice), stod(totalDividends) * 100);
+        array[i] = Wallet(quantity, ticker, convertStringToInt(purchasePrice), convertStringToInt(totalDividends));
     }
 }
 
@@ -213,21 +214,22 @@ int buscaBinByDate(T *array, const int &begin, const int &end, const string &dat
 }
 
 template<class T>
-int buscaBinByTicker(T *array, const int &begin, const int &end, const string &ticker) {
+int buscaBinByTicker(T *array, const int &begin, const int &end, const string &ticker, int maior) {
     if (begin > end)
-        return -1;
+        return maior;
     int meio = (end - begin) / 2 + begin;
     if (array[meio].getTicker() == ticker) {
         return meio;
     }
     if (array[meio].getTicker() > ticker) {
-        return buscaBinByTicker(array, begin, meio - 1, ticker);
+        maior = meio;
+        return buscaBinByTicker(array, begin, meio - 1, ticker, maior);
     }
-    return buscaBinByTicker(array, meio + 1, end, ticker);
+    return buscaBinByTicker(array, meio + 1, end, ticker, maior);
 }
 
 int getStockDayPriceSequencial(HistoryPrice *prices, int totalPrices, const string &ticker, const string &date) {
-    for (int i = 0; i < totalPrices; ++i) {
+    for (int i = 0; i < totalPrices; i++) {
         if (prices[i].getTicker() == ticker && prices[i].getDate() == date) {
             return prices[i].getPrice();
         }
@@ -263,7 +265,7 @@ void buyStocks(Wallet *wallet, int totalWallet, HistoryPrice *prices, int totalP
                int &totalnewPurchase, BoughtStock *boughtStocks, int &totalBoughtStocks) {
     Wallet *lowerStock = &wallet[0];
     int priceMinValorStockInDate = getArrayPriceByTicker(prices, totalPrices, lowerStock->getTicker(), date);
-    for (int i = 1; i < totalWallet; ++i) {
+    for (int i = 1; i < totalWallet; i++) {
         int stockUnitPriceInDate = getArrayPriceByTicker(prices, totalPrices, wallet[i].getTicker(), date);
         if (stockUnitPriceInDate) {
             if (stockUnitPriceInDate * wallet[i].getQuantity() < priceMinValorStockInDate * lowerStock->getQuantity()) {
@@ -294,15 +296,22 @@ void buyStocks(Wallet *wallet, int totalWallet, HistoryPrice *prices, int totalP
             boughtStocks[0].setQuantity(boughtStocks[0].getQuantity() + 1);
             boughtStocks[0].setPrice(boughtStocks[0].getPrice() + priceMinValorStockInDate);
         } else {
-            OnlyTickerCompare<BoughtStock> tickerCompare;
-            quickSort(boughtStocks, totalBoughtStocks, tickerCompare);
-            int stockIndex = buscaBinByTicker(boughtStocks, 0, totalBoughtStocks - 1, lowerStock->getTicker());
-            if (stockIndex != -1) {
+            int stockIndex = buscaBinByTicker(boughtStocks, 0, totalBoughtStocks - 1, lowerStock->getTicker(), -1);
+            if (stockIndex != -1 && boughtStocks[stockIndex].getTicker() == lowerStock->getTicker()) {
                 boughtStocks[stockIndex].setQuantity(boughtStocks[stockIndex].getQuantity() + 1);
                 boughtStocks[stockIndex].setPrice(boughtStocks[stockIndex].getPrice() + priceMinValorStockInDate);
             } else {
-                boughtStocks[totalBoughtStocks] = BoughtStock(lowerStock->getTicker(), 1, priceMinValorStockInDate);
                 totalBoughtStocks++;
+                if (stockIndex == -1) {
+                    boughtStocks[totalBoughtStocks - 1] = BoughtStock(lowerStock->getTicker(), 1,
+                                                                      priceMinValorStockInDate);
+                } else {
+                    for (int i = totalBoughtStocks - 1; i > stockIndex; i--) {
+                        boughtStocks[i] = boughtStocks[i - 1];
+                    }
+                    boughtStocks[stockIndex] = BoughtStock(lowerStock->getTicker(), 1, priceMinValorStockInDate);
+                }
+
             }
         }
     }
@@ -318,12 +327,15 @@ int getDividendByTickerAndRangeDate(HistoryEarning *earnings, int totalEarnings,
     int left = 0;
     int right = totalEarnings - 1;
     int fisrtDateInRange = buscaBinByDate(earnings, left, right, startDate, -1, false);
-    int lastDateInRange = buscaBinByDate(earnings, left, right, endDate, -1, true);
-    if (lastDateInRange == -1) {
-        lastDateInRange = totalEarnings - 1;
-    }
+//    int lastDateInRange = buscaBinByDate(earnings, left, right, endDate, -1, true);
+//    if (lastDateInRange == -1) {
+//        lastDateInRange = totalEarnings - 1;
+//    }
     int totalDividendsInRange = 0;
-    for (int i = fisrtDateInRange; i <= lastDateInRange; i++) {
+    for (int i = fisrtDateInRange; i <= totalEarnings; i++) {
+        if (compareDates(endDate, earnings[i].getDate())) {
+            break;
+        }
         if (earnings[i].getTicker() == ticker) {
             totalDividendsInRange += earnings[i].getPrice();
         }
@@ -340,11 +352,14 @@ getMaxMinDayPrice(HistoryPrice *prices, int totalPrices, Wallet *stocks, int tot
     int left = 0;
     int right = totalPrices - 1;
     int fisrtDateInRange = buscaBinByDate(prices, left, right, startDate, -1, false);
-    int lastDateInRange = buscaBinByDate(prices, left, right, endDate, -1, true);
-    if (lastDateInRange == -1) {
-        lastDateInRange = totalPrices - 1;
-    }
-    for (int i = fisrtDateInRange; i <= lastDateInRange; i++) {
+//    int lastDateInRange = buscaBinByDate(prices, left, right, endDate, -1, true);
+//    if (lastDateInRange == -1) {
+//        lastDateInRange = totalPrices - 1;
+//    }
+    for (int i = fisrtDateInRange; i < totalPrices; i++) {
+        if (compareDates(endDate, prices[i].getDate())) {
+            break;
+        }
         datesInRange[totalDatesInRange] = prices[i].getDate();
         totalDatesInRange++;
     }
@@ -447,12 +462,12 @@ handleActions(const string &action, const string &params, const string &header, 
     stringstream ssin(params);
     while (ssin.good() && i < 2) {
         ssin >> paramsArray[i];
-        ++i;
+        i++;
     }
     if (action == "valor") {
         int totalValue = 0;
         printValorOperatorHeader(header, paramsArray[0]);
-        for (int j = 0; j < totalWallets; ++j) {
+        for (int j = 0; j < totalWallets; j++) {
             int price = getStockDayPriceSequencial(prices, totalPrices, wallets[j].getTicker(), paramsArray[0]) *
                         wallets[j].getQuantity();
             totalValue += price;
@@ -472,7 +487,7 @@ handleActions(const string &action, const string &params, const string &header, 
         TickerCompare<HistoryPrice> tickerCompare;
         quickSort(prices, totalPrices, tickerCompare);
         int totalValue = 0;
-        for (int j = 0; j < totalWallets; ++j) {
+        for (int j = 0; j < totalWallets; j++) {
             int price = getArrayPriceByTicker(prices, totalPrices, wallets[j].getTicker(), paramsArray[0]) *
                         wallets[j].getQuantity();
             totalValue += price;
@@ -492,7 +507,7 @@ handleActions(const string &action, const string &params, const string &header, 
         DateCompare<HistoryEarning> dateCompare;
         quickSort(earnings, totalEarnings, dateCompare);
         int totalDividend = 0;
-        for (int j = 0; j < totalWallets; ++j) {
+        for (int j = 0; j < totalWallets; j++) {
             int dividend =
                     getDividendByTickerAndRangeDate(earnings, totalEarnings, wallets[j].getTicker(), paramsArray[0],
                                                     paramsArray[1]) *
@@ -556,7 +571,7 @@ handleActions(const string &action, const string &params, const string &header, 
         buyStocks(wallets, totalWallets, prices, totalPrices, paramsArray[0], convertedPrice, totalNewPurchase,
                   boughtStocks, totalBoughtStocks);
         if (header != cp) {
-            for (int j = 0; j < totalBoughtStocks; ++j) {
+            for (int j = 0; j < totalBoughtStocks; j++) {
                 printBuyStockOperator(boughtStocks[j].getTicker(), boughtStocks[j].getQuantity(),
                                       boughtStocks[j].getPrice());
             }
@@ -569,11 +584,13 @@ handleActions(const string &action, const string &params, const string &header, 
         cout << formatFloat(totalNewPurchase) << endl;
     }
     delete[] paramsArray;
-    if (header == mc)
+    if (header == mc && action != "ordenar") {
         cout << endl;
+    }
 }
 
 int main() {
+    auto start_time = chrono::high_resolution_clock::now();
     // Declaring variables
     int totalPrices;
     int totalEarnings;
@@ -631,5 +648,8 @@ int main() {
     delete[] prices;
     delete[] earnings;
     delete[] wallets;
+    auto end_time = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time);
+    cout << "O programa levou " << duration.count() << " microssegundos para ser executado\n";
     return 0;
 }
