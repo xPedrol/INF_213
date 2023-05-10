@@ -1,4 +1,4 @@
-//#include <chrono>
+#include <chrono>
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -172,7 +172,7 @@ void readInitialData(T *array, int total) {
         string price;
         string date;
         string ticker;
-//        cout << "Enter the date, ticker and price at position " << i << ": " << endl;
+//        cout << "Enter the date, ticker and totalPrice at position " << i << ": " << endl;
         cin >> date >> ticker >> price;
         array[i] = T(convertStringToInt(price), date, ticker);
     }
@@ -184,7 +184,7 @@ void readWalletData(Wallet *array, int total) {
         string ticker;
         string purchasePrice;
         string totalDividends;
-//        cout << "Enter the ticker, quantity, purchase price and total dividends at position " << i << ": " << endl;
+//        cout << "Enter the ticker, quantity, purchase totalPrice and total dividends at position " << i << ": " << endl;
         cin >> ticker >> quantity >> purchasePrice >> totalDividends;
         array[i] = Wallet(quantity, ticker, convertStringToInt(purchasePrice), convertStringToInt(totalDividends));
     }
@@ -274,8 +274,11 @@ buyStocks2(Wallet *stock, int totalStock, HistoryPrice *prices, int totalPrices,
 
     for (int i = 0; i < totalStock; i++) {
         stockPriceQtd[i].setStockIndex(i);
-        stockPriceQtd[i].setPrice(getArrayPriceByTicker(prices, totalPrices, stock[i].getTicker(), date));
-        if(stockPriceQtd[i].getPrice() == -1){
+        stockPriceQtd[i].setUnitPrice(
+                getArrayPriceByTicker(prices, totalPrices, stock[i].getTicker(), date));
+        stockPriceQtd[i].setPrice(stockPriceQtd[i].getUnitPrice() * stock[i].getQuantity());
+        stockPriceQtd[i].setNewQuantity(0);
+        if (stockPriceQtd[i].getPrice() == -1) {
             return;
         }
     }
@@ -283,26 +286,31 @@ buyStocks2(Wallet *stock, int totalStock, HistoryPrice *prices, int totalPrices,
         return a.getPrice() < b.getPrice();
     });
     while (newValue > 0) {
-        int smallerStockPrice = stockPriceQtd[0].getPrice();
-        int secondSmallerStockPrice = stockPriceQtd[1].getPrice();
+        int smallerStockUnitPrice = stockPriceQtd[0].getUnitPrice();
+        int secondSmallerStockUnitPrice = stockPriceQtd[1].getUnitPrice();
         Wallet *smallerStock = &stock[stockPriceQtd[0].getStockIndex()];
         Wallet *secondSmallerStock = &stock[stockPriceQtd[1].getStockIndex()];
-        int maxBuyValue = (secondSmallerStockPrice * secondSmallerStock->getQuantity() -
-                           smallerStockPrice * smallerStock->getQuantity());
-        int qtdToBuy = ceil(maxBuyValue / smallerStockPrice);
-        if (qtdToBuy > newValue) {
+        int maxBuyValue = (secondSmallerStockUnitPrice * secondSmallerStock->getQuantity() -
+                           smallerStockUnitPrice * smallerStock->getQuantity());
+        int qtdToBuy = ceil((double) maxBuyValue / (double) smallerStockUnitPrice);
+        if (newValue < qtdToBuy * smallerStockUnitPrice) {
+            qtdToBuy = newValue / smallerStockUnitPrice;
+        }
+//        int qtdToBuy = newValue / smallerStockUnitPrice;
+        if (qtdToBuy > newValue || qtdToBuy <= 0) {
             break;
         }
-        newValue -= qtdToBuy * smallerStockPrice;
+        newValue -= qtdToBuy * smallerStockUnitPrice;
         smallerStock->setQuantity(smallerStock->getQuantity() + qtdToBuy);
-        totalnewPurchase += qtdToBuy * smallerStockPrice;
-        stockPriceQtd[0].setPrice(smallerStockPrice + qtdToBuy * smallerStockPrice);
-        printBuyStockOperator(smallerStock->getTicker(), qtdToBuy, qtdToBuy * smallerStockPrice);
+        smallerStock->setPurchasePrice(smallerStock->getPurchasePrice() + qtdToBuy * smallerStockUnitPrice);
+        totalnewPurchase += qtdToBuy * smallerStockUnitPrice;
+        stockPriceQtd[0].setPrice(stockPriceQtd[0].getPrice() + qtdToBuy * smallerStockUnitPrice);
+        stockPriceQtd[0].setNewQuantity(stockPriceQtd[0].getNewQuantity() + qtdToBuy);
         quickSort(stockPriceQtd, totalStock, [](StockPriceQtd a, StockPriceQtd b) {
             return a.getPrice() < b.getPrice();
         });
 //        for (int i = 0; i < totalStock - 1; i++) {
-//            if (stockPriceQtd[i].getPrice() > stockPriceQtd[i + 1].getPrice()) {
+//            if (stockPriceQtd[i].getPrice() > stockPriceQtd[i + 1].setPrice()) {
 //                swap(stockPriceQtd[i], stockPriceQtd[i + 1]);
 //            } else {
 //                break;
@@ -620,6 +628,14 @@ handleActions(const string &action, const string &params, const string &header, 
         auto *stockPriceQtd = new StockPriceQtd[totalStocks];
         buyStocks2(stocks, totalStocks, prices, totalPrices, paramsArray[0], convertedPrice, totalNewPurchase,
                    stockPriceQtd);
+        for (int i = 0; i < totalStocks; i++) {
+            Wallet *wallet = &stocks[stockPriceQtd[i].getStockIndex()];
+            if (stockPriceQtd[i].getNewQuantity() == 0) {
+                break;
+            }
+            int price = stockPriceQtd[i].getUnitPrice() * stockPriceQtd[i].getNewQuantity();
+            printBuyStockOperator(wallet->getTicker(), stockPriceQtd[i].getNewQuantity(), price);
+        }
         delete[] stockPriceQtd;
         if (header != cp) {
             cout << "Total aportado:";
@@ -634,7 +650,7 @@ handleActions(const string &action, const string &params, const string &header, 
 }
 
 int main() {
-//    auto start_time = chrono::high_resolution_clock::now();
+    auto start_time = chrono::high_resolution_clock::now();
     // Declaring variables
     int totalPrices;
     int totalEarnings;
@@ -692,8 +708,8 @@ int main() {
     delete[] prices;
     delete[] earnings;
     delete[] stocks;
-//    auto end_time = chrono::high_resolution_clock::now();
-//    auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time);
-//    cout << "O programa levou " << duration.count() << " microssegundos para ser executado\n";
+    auto end_time = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time);
+    cout << "O programa levou " << duration.count() << " microssegundos para ser executado\n";
     return 0;
 }

@@ -8,20 +8,29 @@
 
 class StockPriceQtd {
     int stockIndex;
-    int price;
+    int totalPrice;
+    int unitPrice;
+    int newQuantity;
 public:
     StockPriceQtd();
 
-    StockPriceQtd(int stockIndex, int quantity);
+    StockPriceQtd(int stockIndex, int price, int unitPrice, int quantity);
 
     int getStockIndex() const;
 
-    void setStockIndex(const int & stockIndex);
+    void setStockIndex(const int &stockIndex);
 
     int getPrice() const;
 
-    void setPrice(const int & price);
+    void setPrice(const int &price);
 
+    int getUnitPrice() const;
+
+    void setUnitPrice(const int &unitPrice);
+
+    int getNewQuantity() const;
+
+    void setNewQuantity(const int &newQuantity);
 };
 
 
