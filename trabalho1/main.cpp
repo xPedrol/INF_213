@@ -1,4 +1,4 @@
-#include <chrono>
+//#include <chrono>
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -271,7 +271,10 @@ void printBuyStockOperator(const string &ticker, int quantity, int value) {
 void
 buyStocks2(Wallet *stock, int totalStock, HistoryPrice *prices, int totalPrices, const string &date, int newValue,
            int &totalnewPurchase, StockPriceQtd *stockPriceQtd) {
-
+    TickerCompare<HistoryPrice> tickerCompare;
+    quickSort(prices, totalPrices, tickerCompare);
+    OnlyTickerCompare<Wallet> onlyTickerCompare;
+    quickSort(stock, totalStock, onlyTickerCompare);
     for (int i = 0; i < totalStock; i++) {
         stockPriceQtd[i].setStockIndex(i);
         stockPriceQtd[i].setUnitPrice(
@@ -283,6 +286,9 @@ buyStocks2(Wallet *stock, int totalStock, HistoryPrice *prices, int totalPrices,
         }
     }
     quickSort(stockPriceQtd, totalStock, [](StockPriceQtd a, StockPriceQtd b) {
+        if (a.getPrice() == b.getPrice()) {
+            return a.getStockIndex() < b.getStockIndex();
+        }
         return a.getPrice() < b.getPrice();
     });
     while (newValue > 0) {
@@ -292,7 +298,15 @@ buyStocks2(Wallet *stock, int totalStock, HistoryPrice *prices, int totalPrices,
         Wallet *secondSmallerStock = &stock[stockPriceQtd[1].getStockIndex()];
         int maxBuyValue = (secondSmallerStockUnitPrice * secondSmallerStock->getQuantity() -
                            smallerStockUnitPrice * smallerStock->getQuantity());
-        int qtdToBuy = ceil((double) maxBuyValue / (double) smallerStockUnitPrice);
+        int qtdToBuy;
+        if (maxBuyValue > 0) {
+            qtdToBuy = ceil((double) maxBuyValue / (double) smallerStockUnitPrice);
+            if (maxBuyValue == smallerStockUnitPrice) {
+                qtdToBuy += 1;
+            }
+        } else {
+            qtdToBuy = 1;
+        }
         if (newValue < qtdToBuy * smallerStockUnitPrice) {
             qtdToBuy = newValue / smallerStockUnitPrice;
         }
@@ -307,6 +321,9 @@ buyStocks2(Wallet *stock, int totalStock, HistoryPrice *prices, int totalPrices,
         stockPriceQtd[0].setPrice(stockPriceQtd[0].getPrice() + qtdToBuy * smallerStockUnitPrice);
         stockPriceQtd[0].setNewQuantity(stockPriceQtd[0].getNewQuantity() + qtdToBuy);
         quickSort(stockPriceQtd, totalStock, [](StockPriceQtd a, StockPriceQtd b) {
+            if (a.getPrice() == b.getPrice()) {
+                return a.getStockIndex() < b.getStockIndex();
+            }
             return a.getPrice() < b.getPrice();
         });
 //        for (int i = 0; i < totalStock - 1; i++) {
@@ -628,13 +645,15 @@ handleActions(const string &action, const string &params, const string &header, 
         auto *stockPriceQtd = new StockPriceQtd[totalStocks];
         buyStocks2(stocks, totalStocks, prices, totalPrices, paramsArray[0], convertedPrice, totalNewPurchase,
                    stockPriceQtd);
-        for (int i = 0; i < totalStocks; i++) {
-            Wallet *wallet = &stocks[stockPriceQtd[i].getStockIndex()];
-            if (stockPriceQtd[i].getNewQuantity() == 0) {
-                break;
+        if (header != cp) {
+            for (int i = 0; i < totalStocks; i++) {
+                Wallet *wallet = &stocks[stockPriceQtd[i].getStockIndex()];
+                if (stockPriceQtd[i].getNewQuantity() == 0) {
+                    break;
+                }
+                int price = stockPriceQtd[i].getUnitPrice() * stockPriceQtd[i].getNewQuantity();
+                printBuyStockOperator(wallet->getTicker(), stockPriceQtd[i].getNewQuantity(), price);
             }
-            int price = stockPriceQtd[i].getUnitPrice() * stockPriceQtd[i].getNewQuantity();
-            printBuyStockOperator(wallet->getTicker(), stockPriceQtd[i].getNewQuantity(), price);
         }
         delete[] stockPriceQtd;
         if (header != cp) {
@@ -650,7 +669,7 @@ handleActions(const string &action, const string &params, const string &header, 
 }
 
 int main() {
-    auto start_time = chrono::high_resolution_clock::now();
+//    auto start_time = chrono::high_resolution_clock::now();
     // Declaring variables
     int totalPrices;
     int totalEarnings;
@@ -708,8 +727,8 @@ int main() {
     delete[] prices;
     delete[] earnings;
     delete[] stocks;
-    auto end_time = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time);
-    cout << "O programa levou " << duration.count() << " microssegundos para ser executado\n";
+//    auto end_time = chrono::high_resolution_clock::now();
+//    auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time);
+//    cout << "O programa levou " << duration.count() << " microssegundos para ser executado\n";
     return 0;
 }
