@@ -1,27 +1,30 @@
 //
 // Created by pedro on 09/05/2023.
 //
-
+#include <string>
+#include "Wallet.h"
 #include "StockPriceQtd.h"
 
 StockPriceQtd::StockPriceQtd() {
-    this->stockIndex = -1;
+    this->stock = nullptr;
     this->totalPrice = 0;
     this->unitPrice = 0;
     this->newQuantity = 0;
 }
 
-StockPriceQtd::StockPriceQtd(int stockIndex, int price, int unitPrice, int quantity) : stockIndex(stockIndex),
-                                                                                       totalPrice(price),
-                                                                                       unitPrice(unitPrice),
-                                                                                       newQuantity(quantity) {}
-
-int StockPriceQtd::getStockIndex() const {
-    return stockIndex;
+StockPriceQtd::StockPriceQtd(Wallet *wallet, int price, int unitPrice, int quantity) {
+    this->stock = wallet;
+    this->totalPrice = price;
+    this->unitPrice = unitPrice;
+    this->newQuantity = quantity;
 }
 
-void StockPriceQtd::setStockIndex(const int &stockIndex) {
-    StockPriceQtd::stockIndex = stockIndex;
+Wallet *StockPriceQtd::getStock() const {
+    return stock;
+}
+
+void StockPriceQtd::setStock(Wallet *wallet) {
+    StockPriceQtd::stock = wallet;
 }
 
 int StockPriceQtd::getPrice() const {

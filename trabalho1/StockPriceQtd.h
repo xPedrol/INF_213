@@ -6,19 +6,19 @@
 #define TRABALHO1_STOCKPRICEQTD_H
 
 
+
 class StockPriceQtd {
-    int stockIndex;
+    Wallet *stock;
     int totalPrice;
     int unitPrice;
     int newQuantity;
 public:
     StockPriceQtd();
+    StockPriceQtd(Wallet *wallet, int price, int unitPrice, int quantity);
 
-    StockPriceQtd(int stockIndex, int price, int unitPrice, int quantity);
+    Wallet *getStock() const;
 
-    int getStockIndex() const;
-
-    void setStockIndex(const int &stockIndex);
+    void setStock(Wallet *wallet);
 
     int getPrice() const;
 

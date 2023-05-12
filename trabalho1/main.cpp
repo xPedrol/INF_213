@@ -269,17 +269,17 @@ void printBuyStockOperator(const string &ticker, int quantity, int value) {
 
 
 void
-buyStocks2(Wallet *stock, int totalStock, HistoryPrice *prices, int totalPrices, const string &date, int newValue,
+buyStocks2(Wallet *stocks, int totalStock, HistoryPrice *prices, int totalPrices, const string &date, int newValue,
            int &totalnewPurchase, StockPriceQtd *stockPriceQtd) {
     TickerCompare<HistoryPrice> tickerCompare;
     quickSort(prices, totalPrices, tickerCompare);
-    OnlyTickerCompare<Wallet> onlyTickerCompare;
-    quickSort(stock, totalStock, onlyTickerCompare);
+//    OnlyTickerCompare<Wallet> onlyTickerCompare;
+//    quickSort(stocks, totalStock, onlyTickerCompare);
     for (int i = 0; i < totalStock; i++) {
-        stockPriceQtd[i].setStockIndex(i);
+        stockPriceQtd[i].setStock(&stocks[i]);
         stockPriceQtd[i].setUnitPrice(
-                getArrayPriceByTicker(prices, totalPrices, stock[i].getTicker(), date));
-        stockPriceQtd[i].setPrice(stockPriceQtd[i].getUnitPrice() * stock[i].getQuantity());
+                getArrayPriceByTicker(prices, totalPrices, stocks[i].getTicker(), date));
+        stockPriceQtd[i].setPrice(stockPriceQtd[i].getUnitPrice() * stocks[i].getQuantity());
         stockPriceQtd[i].setNewQuantity(0);
         if (stockPriceQtd[i].getPrice() == -1) {
             return;
@@ -287,15 +287,15 @@ buyStocks2(Wallet *stock, int totalStock, HistoryPrice *prices, int totalPrices,
     }
     quickSort(stockPriceQtd, totalStock, [](StockPriceQtd a, StockPriceQtd b) {
         if (a.getPrice() == b.getPrice()) {
-            return a.getStockIndex() < b.getStockIndex();
+            return a.getStock()->getTicker() < b.getStock()->getTicker();
         }
         return a.getPrice() < b.getPrice();
     });
     while (newValue > 0) {
         int smallerStockUnitPrice = stockPriceQtd[0].getUnitPrice();
         int secondSmallerStockUnitPrice = stockPriceQtd[1].getUnitPrice();
-        Wallet *smallerStock = &stock[stockPriceQtd[0].getStockIndex()];
-        Wallet *secondSmallerStock = &stock[stockPriceQtd[1].getStockIndex()];
+        Wallet *smallerStock = stockPriceQtd[0].getStock();
+        Wallet *secondSmallerStock = stockPriceQtd[1].getStock();
         int maxBuyValue = (secondSmallerStockUnitPrice * secondSmallerStock->getQuantity() -
                            smallerStockUnitPrice * smallerStock->getQuantity());
         int qtdToBuy;
@@ -320,9 +320,12 @@ buyStocks2(Wallet *stock, int totalStock, HistoryPrice *prices, int totalPrices,
         totalnewPurchase += qtdToBuy * smallerStockUnitPrice;
         stockPriceQtd[0].setPrice(stockPriceQtd[0].getPrice() + qtdToBuy * smallerStockUnitPrice);
         stockPriceQtd[0].setNewQuantity(stockPriceQtd[0].getNewQuantity() + qtdToBuy);
+        if(newValue <= 0) {
+            break;
+        }
         quickSort(stockPriceQtd, totalStock, [](StockPriceQtd a, StockPriceQtd b) {
             if (a.getPrice() == b.getPrice()) {
-                return a.getStockIndex() < b.getStockIndex();
+                return a.getStock()->getTicker() < b.getStock()->getTicker();
             }
             return a.getPrice() < b.getPrice();
         });
@@ -646,13 +649,13 @@ handleActions(const string &action, const string &params, const string &header, 
         buyStocks2(stocks, totalStocks, prices, totalPrices, paramsArray[0], convertedPrice, totalNewPurchase,
                    stockPriceQtd);
         if (header != cp) {
-            for (int i = 0; i < totalStocks; i++) {
-                Wallet *wallet = &stocks[stockPriceQtd[i].getStockIndex()];
-                if (stockPriceQtd[i].getNewQuantity() == 0) {
+            for (int j = 0; j < totalStocks; j++) {
+                Wallet *stock = stockPriceQtd[j].getStock();
+                if (stockPriceQtd[j].getNewQuantity() == 0) {
                     break;
                 }
-                int price = stockPriceQtd[i].getUnitPrice() * stockPriceQtd[i].getNewQuantity();
-                printBuyStockOperator(wallet->getTicker(), stockPriceQtd[i].getNewQuantity(), price);
+                int price = stockPriceQtd[j].getUnitPrice() * stockPriceQtd[j].getNewQuantity();
+                printBuyStockOperator(stock->getTicker(), stockPriceQtd[j].getNewQuantity(), price);
             }
         }
         delete[] stockPriceQtd;
