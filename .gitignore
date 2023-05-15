@@ -1,3 +1,5 @@
 *.exe
 .idea
 trabalho1/cmake-build-debug
+pratica7/cmake-build-debug
+pratica7/simples

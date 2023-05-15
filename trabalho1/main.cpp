@@ -320,7 +320,7 @@ buyStocks2(Wallet *stocks, int totalStock, HistoryPrice *prices, int totalPrices
         totalnewPurchase += qtdToBuy * smallerStockUnitPrice;
         stockPriceQtd[0].setPrice(stockPriceQtd[0].getPrice() + qtdToBuy * smallerStockUnitPrice);
         stockPriceQtd[0].setNewQuantity(stockPriceQtd[0].getNewQuantity() + qtdToBuy);
-        if(newValue <= 0) {
+        if (newValue <= 0) {
             break;
         }
         quickSort(stockPriceQtd, totalStock, [](StockPriceQtd a, StockPriceQtd b) {
@@ -424,13 +424,12 @@ int getDividendByTickerAndRangeDate(HistoryEarning *earnings, int totalEarnings,
 MinMax
 getMaxMinDayPrice(HistoryPrice *prices, int totalPrices, Wallet *stocks, int totalStocks, const string &startDate,
                   const string &endDate) {
-
-    auto *datesInRange = new string[totalPrices];
-    int totalDatesInRange = 0;
-    int left = 0;
-    int right = totalPrices - 1;
-    int fisrtDateInRange = buscaBinByDate(prices, left, right, startDate, -1, false);
-//    int lastDateInRange = buscaBinByDate(prices, left, right, endDate, -1, true);
+    string minDate;
+    string maxDate;
+    int maxPrice = 0;
+    int minPrice = 0;
+    int dateTotalprice = 0;
+    int fisrtDateInRange = buscaBinByDate(prices, 0, totalPrices - 1, startDate, -1, false);
     if (fisrtDateInRange == -1) {
         fisrtDateInRange = 0;
     }
@@ -438,35 +437,33 @@ getMaxMinDayPrice(HistoryPrice *prices, int totalPrices, Wallet *stocks, int tot
         if (compareDates(endDate, prices[i].getDate())) {
             break;
         }
-        datesInRange[totalDatesInRange] = prices[i].getDate();
-        totalDatesInRange++;
-    }
-    totalDatesInRange = unique(datesInRange, datesInRange + totalDatesInRange) - datesInRange;
-    string minDate;
-    string maxDate;
-    int maxPrice = 0;
-    int minPrice = 0;
-    TickerCompare<HistoryPrice> tickerCompare;
-    quickSort(prices, totalPrices, tickerCompare);
-    // sort(prices, prices + totalPrices, TickerCompare<HistoryPrice>());
-    for (int i = 0; i < totalDatesInRange; i++) {
-        int dateTotalprice = 0;
-        for (int j = 0; j < totalStocks; j++) {
-            int stockDayPrice = getArrayPriceByTicker(prices, totalPrices, stocks[j].getTicker(), datesInRange[i]);
-            if (stockDayPrice == -1)
+        int stockIndex = buscaBinByTicker(stocks, 0, totalStocks - 1, prices[i].getTicker(), -1);
+        bool justStop = false;
+        if (stockIndex == -1) {
+            if (i == totalPrices - 1 || prices[i + 1].getDate() != prices[i].getDate()) {
+                justStop = true;
+            }else{
                 continue;
-            dateTotalprice += stockDayPrice * stocks[j].getQuantity();
+            }
+        }
+        if (!justStop) {
+            Wallet *stock = &stocks[stockIndex];
+            dateTotalprice += prices[i].getPrice() * stock->getQuantity();
+            if (i != totalPrices-1 && prices[i + 1].getDate() == prices[i].getDate()) {
+                continue;
+            }
         }
         if (minPrice == 0 || dateTotalprice < minPrice) {
             minPrice = dateTotalprice;
-            minDate = datesInRange[i];
+            minDate = prices[i].getDate();
         }
         if (dateTotalprice > maxPrice) {
             maxPrice = dateTotalprice;
-            maxDate = datesInRange[i];
+            maxDate = prices[i].getDate();
         }
+        dateTotalprice = 0;
     }
-    delete[] datesInRange;
+
     return {maxDate, maxPrice, minDate, minPrice};
 }
 
@@ -607,6 +604,8 @@ handleActions(const string &action, const string &params, const string &header, 
         prindMinMaxOperatorHeader(header, paramsArray[0], paramsArray[1]);
         DateCompare<HistoryPrice> dateCompare;
         quickSort(prices, totalPrices, dateCompare);
+        OnlyTickerCompare<Wallet> tickerCompare;
+        quickSort(stocks, totalStocks, tickerCompare);
         MinMax minMax = getMaxMinDayPrice(prices, totalPrices, stocks, totalStocks, paramsArray[0], paramsArray[1]);
         if (header != cp) {
             cout << "Valor minimo no dia " << minMax.getMinDate() << ":";
