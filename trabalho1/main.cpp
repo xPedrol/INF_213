@@ -220,6 +220,9 @@ int buscaBinByTicker(T *array, const int &begin, const int &end, const string &t
         return maior;
     int meio = (end - begin) / 2 + begin;
     if (array[meio].getTicker() == ticker) {
+        while (meio > 0 && array[meio - 1].getTicker() == ticker) {
+            meio--;
+        }
         return meio;
     }
     if (array[meio].getTicker() > ticker) {
@@ -421,53 +424,87 @@ int getDividendByTickerAndRangeDate(HistoryEarning *earnings, int totalEarnings,
     return totalDividendsInRange;
 }
 
+class Count {
+    int iStock;
+    int init;
+
+public:
+    int getIStock() {
+        return iStock;
+    }
+
+    int getInit() {
+        return init;
+    }
+
+    void setIStock(int iStock) {
+        this->iStock = iStock;
+    }
+
+    void setInit(int init) {
+        this->init = init;
+    }
+};
+
 MinMax
 getMaxMinDayPrice(HistoryPrice *prices, int totalPrices, Wallet *stocks, int totalStocks, const string &startDate,
                   const string &endDate) {
-    auto *datesInRange = new string[totalPrices];
-    int totalDatesInRange = 0;
-    int left = 0;
-    int right = totalPrices - 1;
-    int fisrtDateInRange = buscaBinByDate(prices, left, right, startDate, -1, false);
-//    int lastDateInRange = buscaBinByDate(prices, left, right, endDate, -1, true);
-    if (fisrtDateInRange == -1) {
-        fisrtDateInRange = 0;
-    }
-    for (int i = fisrtDateInRange; i < totalPrices; i++) {
-        if (compareDates(endDate, prices[i].getDate())) {
-            break;
+    int cotationDays = 0;
+    for (int i = 0; i < totalPrices; i++) {
+        if (i > 0) {
+            if (prices[i].getTicker() == prices[i - 1].getTicker()) {
+                cotationDays++;
+            } else {
+                break;
+            }
+        } else {
+            cotationDays++;
         }
-        datesInRange[totalDatesInRange] = prices[i].getDate();
-        totalDatesInRange++;
     }
-    totalDatesInRange = unique(datesInRange, datesInRange + totalDatesInRange) - datesInRange;
+    if (cotationDays == 0) {
+        return {"", 0, "", 0};
+    }
+    auto *count = new Count[totalStocks];
+    for (int i = 0; i < totalStocks; i++) {
+        count[i].setIStock(i);
+        count[i].setInit(buscaBinByTicker(prices, 0, totalPrices - 1, stocks[i].getTicker(), -1));
+    }
+    int minPrice = 0;
+    int maxPrice = 0;
+    bool make = true;
     string minDate;
     string maxDate;
-    int maxPrice = 0;
-    int minPrice = 0;
-    TickerCompare<HistoryPrice> tickerCompare;
-    quickSort(prices, totalPrices, tickerCompare);
-    // sort(prices, prices + totalPrices, TickerCompare<HistoryPrice>());
-    for (int i = 0; i < totalDatesInRange; i++) {
-        int dateTotalprice = 0;
+    for (int i = 0; i < cotationDays; i++) {
+        int totalValue = 0;
+        bool outOfRange = false;
         for (int j = 0; j < totalStocks; j++) {
-            int stockDayPrice = getArrayPriceByTicker(prices, totalPrices, stocks[j].getTicker(), datesInRange[i]);
-            if (stockDayPrice == -1)
+            Wallet *stock = &stocks[j];
+            int stockIndex = count[j].getInit();
+            if (compareDates(prices[stockIndex].getDate(), startDate)) {
+                count[j].setInit(stockIndex + 1);
+                outOfRange = true;
                 continue;
-            dateTotalprice += stockDayPrice * stocks[j].getQuantity();
+            }
+            if (compareDates(endDate, prices[stockIndex].getDate())) {
+                make = false;
+                break;
+            }
+            totalValue += prices[stockIndex].getPrice() * stock->getQuantity();
+            count[j].setInit(stockIndex + 1);
         }
-        if (minPrice == 0 || dateTotalprice < minPrice) {
-            minPrice = dateTotalprice;
-            minDate = datesInRange[i];
+        if (!make) break;
+        if (outOfRange) continue;
+        if (totalValue > maxPrice || minPrice == 0) {
+            maxPrice = totalValue;
+            maxDate = prices[i].getDate();
         }
-        if (dateTotalprice > maxPrice) {
-            maxPrice = dateTotalprice;
-            maxDate = datesInRange[i];
+        if (totalValue < minPrice || minPrice == 0) {
+            minPrice = totalValue;
+            minDate = prices[i].getDate();
         }
     }
-    delete[] datesInRange;
+    delete[] count;
     return {maxDate, maxPrice, minDate, minPrice};
-
 }
 
 void prindMinMaxOperatorHeader(const string &header, const string &startDate, const string &endDate) {
@@ -560,8 +597,6 @@ handleActions(const string &action, const string &params, const string &header, 
     }
     if (action == "valorFast") {
         printValorOperatorHeader(header, paramsArray[0]);
-        TickerCompare<HistoryPrice> tickerCompare;
-        quickSort(prices, totalPrices, tickerCompare);
         int totalValue = 0;
         for (int j = 0; j < totalStocks; j++) {
             int price = getArrayPriceByTicker(prices, totalPrices, stocks[j].getTicker(), paramsArray[0]) *
@@ -583,8 +618,6 @@ handleActions(const string &action, const string &params, const string &header, 
     }
     if (action == "dividendo") {
         printDividendOperatorHeader(header, paramsArray[0], paramsArray[1]);
-        DateCompare<HistoryEarning> dateCompare;
-        quickSort(earnings, totalEarnings, dateCompare);
         int totalDividend = 0;
         for (int j = 0; j < totalStocks; j++) {
             int dividend =
@@ -605,8 +638,6 @@ handleActions(const string &action, const string &params, const string &header, 
     }
     if (action == "mimax") {
         prindMinMaxOperatorHeader(header, paramsArray[0], paramsArray[1]);
-        DateCompare<HistoryPrice> dateCompare;
-        quickSort(prices, totalPrices, dateCompare);
         MinMax minMax = getMaxMinDayPrice(prices, totalPrices, stocks, totalStocks, paramsArray[0], paramsArray[1]);
         if (header != cp) {
             cout << "Valor minimo no dia " << minMax.getMinDate() << ":";
@@ -697,6 +728,12 @@ int main() {
         stocks = new Wallet[totalStocks];
         readWalletData(stocks, totalStocks);
 
+
+        TickerCompare<HistoryPrice> tickerCompare;
+        quickSort(prices, totalPrices, tickerCompare);
+
+        DateCompare<HistoryEarning> dateCompare;
+        quickSort(earnings, totalEarnings, dateCompare);
         // Printing data
 //        cout << "Printing history prices: " << endl;
 //        printData(prices, totalPrices);
