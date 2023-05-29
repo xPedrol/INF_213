@@ -405,20 +405,23 @@ void buyStocks(Wallet *stock, int totalStock, HistoryPrice *prices, int totalPri
 int getDividendByTickerAndRangeDate(HistoryEarning *earnings, int totalEarnings, const string &ticker,
                                     const string &startDate,
                                     const string &endDate) {
-    int left = 0;
-    int right = totalEarnings - 1;
-    int fisrtDateInRange = buscaBinByDate(earnings, left, right, startDate, -1, false);
+    int fisrtDateInRange = buscaBinByTicker(earnings, 0,  totalEarnings - 1, ticker, -1);
 //    int lastDateInRange = buscaBinByDate(earnings, left, right, endDate, -1, true);
     if (fisrtDateInRange == -1) {
-        fisrtDateInRange = 0;
+        return 0;
     }
     int totalDividendsInRange = 0;
     for (int i = fisrtDateInRange; i < totalEarnings; i++) {
-        if (compareDates(endDate, earnings[i].getDate())) {
-            break;
-        }
         if (earnings[i].getTicker() == ticker) {
+            if(earnings[i].getDate() < startDate){
+                continue;
+            }
+            if(earnings[i].getDate() > endDate){
+                break;
+            }
             totalDividendsInRange += earnings[i].getPrice();
+        }else{
+            break;
         }
     }
     return totalDividendsInRange;
@@ -729,11 +732,11 @@ int main() {
         readWalletData(stocks, totalStocks);
 
 
-        TickerCompare<HistoryPrice> tickerCompare;
-        quickSort(prices, totalPrices, tickerCompare);
+        TickerCompare<HistoryPrice> priceCompare;
+        quickSort(prices, totalPrices, priceCompare);
 
-        DateCompare<HistoryEarning> dateCompare;
-        quickSort(earnings, totalEarnings, dateCompare);
+        TickerCompare<HistoryEarning> earningCompare;
+        quickSort(earnings, totalEarnings, earningCompare);
         // Printing data
 //        cout << "Printing history prices: " << endl;
 //        printData(prices, totalPrices);
