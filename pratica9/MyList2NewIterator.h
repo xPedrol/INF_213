@@ -81,17 +81,19 @@ public:
     iterator erase(iterator elem); //remove o elemento apontado por Elem
     //retorna o (apontador) para o elemento apos o removido
 
-    iterator begin() {
+    iterator begin() const {
         return iterator(dataFirst);
     } //Exercicio: e se tivermos uma lista constante, como itera-la para, por exemplo, imprimir os elementos?
-    iterator end() { return iterator(NULL); } //retorna um apontador para um nodo que estaria APOS o final da lista
+    iterator end() const {
+        return iterator(NULL);
+    } //retorna um apontador para um nodo que estaria APOS o final da lista
 
     //por simplicidade, nao vamos criar iteradores constantes...
 
     void clear();
 
     //Exercicio: implementar as duas funcoes abaixo supondo que nao ha um membro de dados dataSize (o calculo do tamanho da lista seria dinamico)
-    bool empty() const;
+    bool empty();
 
     int
     size() const;// na STL List, a funcao size() calcula o tamanho da lista dinamicamente (exercicio: qual a ordem de complexidade?)
@@ -166,17 +168,17 @@ MyList2Iterator<T> MyList2Iterator<T>::operator--() {
 template<class T>
 MyList2Iterator<T> MyList2Iterator<T>::operator++(int) {
     //Termine esta implementacao...
-    MyList2Iterator<T> temp = new MyList2Iterator<T>(ptr);
+    auto* temp = new MyList2Iterator<T>(ptr);
     ptr = ptr->next;
-    return temp;
+    return *temp;
 }
 
 template<class T>
 MyList2Iterator<T> MyList2Iterator<T>::operator--(int) {
     //Termine esta implementacao...
-    MyList2Iterator<T> temp = new MyList2Iterator<T>(ptr);
+    auto* temp = new MyList2Iterator<T>(ptr);
     ptr = ptr->prev;
-    return temp;
+    return *temp;
 }
 
 
@@ -224,7 +226,7 @@ MyList2<T>::MyList2(const MyList2 &other) {
 }
 
 template<class T>
-bool MyList2<T>::empty() const {
+bool MyList2<T>::empty() {
     return begin() == end();
 }
 
@@ -236,6 +238,7 @@ int MyList2<T>::size() const {
         count++;
         it++;
     }
+    return count;
 }
 
 template<class T>
@@ -295,13 +298,13 @@ void MyList2<T>::insert(const T &elem, iterator whereIt) {
     if (whereIt == end()) { //caso especial: insercao no final da lista...
         push_back(elem);
     } else if (whereIt == begin()) { //caso especial: insercao no inicio da lista
-        Node<T> *newNode = new Node<T>(elem);
+        auto *newNode = new Node<T>(elem);
         newNode->next = dataFirst;
         dataFirst->prev = newNode;
         dataFirst = newNode;
         dataSize++;
     } else { //insercao no meio da lista...
-        Node<T> *newNode = new Node<T>(elem);
+        auto *newNode = new Node<T>(elem);
         where->prev->next = newNode;
         newNode->prev = where->prev;
         newNode->next = where;
