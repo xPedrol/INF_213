@@ -85,7 +85,7 @@ public:
         return iterator(dataFirst);
     } //Exercicio: e se tivermos uma lista constante, como itera-la para, por exemplo, imprimir os elementos?
     iterator end() const {
-        return iterator(NULL);
+        return iterator(NULL, dataLast);
     } //retorna um apontador para um nodo que estaria APOS o final da lista
 
     //por simplicidade, nao vamos criar iteradores constantes...
@@ -115,7 +115,9 @@ class MyList2Iterator {
     friend class MyList2<T>;
 
 public:
-    MyList2Iterator(Node<T> *ptr_) : ptr(ptr_) {}
+    MyList2Iterator(Node<T> *ptr_) : ptr(ptr_), ptr2(NULL) {}
+
+    MyList2Iterator(Node<T> *ptr_, Node<T> *ptr2_) : ptr(ptr_), ptr2(ptr2_) {}
 
     T &operator*() { return ptr->data; }
 
@@ -145,18 +147,26 @@ public:
 
 private:
     Node<T> *ptr;
+    Node<T> *ptr2;
 };
 
 
 //pre incremento/decremento
 template<class T>
 MyList2Iterator<T> MyList2Iterator<T>::operator++() {
+    if (ptr == NULL) {
+
+    }
     ptr = ptr->next;
     return *this;
 }
 
 template<class T>
 MyList2Iterator<T> MyList2Iterator<T>::operator--() {
+    if (ptr == NULL) {
+        ptr = ptr2;
+        return *this;
+    }
     ptr = ptr->prev;
 
     return *this;
@@ -168,7 +178,7 @@ MyList2Iterator<T> MyList2Iterator<T>::operator--() {
 template<class T>
 MyList2Iterator<T> MyList2Iterator<T>::operator++(int) {
     //Termine esta implementacao...
-    auto* temp = new MyList2Iterator<T>(ptr);
+    auto *temp = new MyList2Iterator<T>(ptr);
     ptr = ptr->next;
     return *temp;
 }
@@ -176,8 +186,15 @@ MyList2Iterator<T> MyList2Iterator<T>::operator++(int) {
 template<class T>
 MyList2Iterator<T> MyList2Iterator<T>::operator--(int) {
     //Termine esta implementacao...
-    auto* temp = new MyList2Iterator<T>(ptr);
-    ptr = ptr->prev;
+    auto *temp = new MyList2Iterator<T>(ptr);
+    if (ptr == NULL) {
+        while (ptr2->next != NULL) {
+            ptr2 = ptr2->next;
+        }
+        ptr = ptr2;
+    } else {
+        ptr = ptr->prev;
+    }
     return *temp;
 }
 
@@ -257,7 +274,6 @@ MyList2<T> &MyList2<T>::operator=(const MyList2 &other) {
     }
     return *this;
 }
-
 
 //---------------------------------------------------------------------------------------
 //Funcoes de acesso
