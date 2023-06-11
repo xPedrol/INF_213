@@ -1,0 +1,8 @@
+# ninja log v5
+17	833	7081970472845140	CMakeFiles/pratica10.dir/resolveLabirinto.cpp.obj	4d464551a1f72f19
+12	531	7081970469833428	CMakeFiles/pratica10.dir/MedianaLenta.cpp.obj	61b42ef792343ab3
+5	113	7081970465638622	CMakeFiles/pratica10.dir/Mediana.cpp.obj	22344393178ad91f
+0	461	7081970469125201	CMakeFiles/pratica10.dir/driver.cpp.obj	bce6c230317b5f4d
+9	526	7081970469778220	CMakeFiles/pratica10.dir/resolveFila.cpp.obj	dfdca18541bd975f
+3	123	7081970734869737	build.ninja	b9bab708be3a9d26
+1	121	7081970736266053	pratica10.exe	1999ba4c89d6cede

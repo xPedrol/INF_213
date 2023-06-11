@@ -1,0 +1,3 @@
+D:/c++/INF_213/pratica10/cmake-build-debug/CMakeFiles/pratica10.dir
+D:/c++/INF_213/pratica10/cmake-build-debug/CMakeFiles/edit_cache.dir
+D:/c++/INF_213/pratica10/cmake-build-debug/CMakeFiles/rebuild_cache.dir
